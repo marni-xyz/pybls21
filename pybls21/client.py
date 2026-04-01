@@ -245,6 +245,14 @@ class S21Client:
             alarm_state=alarm_state,
             supply_fan_speed=supply_fan_speed,
             extract_fan_speed=extract_fan_speed,
+
+            # MaNi additions
+            current_temperature_fresh_air=temp_air_incoming / 10,
+            current_temperature_consumed_air=temp_air_outgoing / 10,
+            filter_countdown=filter_countdown,
+            pressure_air_incoming=pressure_air_incoming,
+            pressure_air_outgoing=pressure_air_outgoing,
+            # EO MaNi additions
         )
 
         return self.device
