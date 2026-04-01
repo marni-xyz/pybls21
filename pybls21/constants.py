@@ -23,3 +23,11 @@ IR_VerMAIN_FMW_start = 34
 IR_VerMAIN_FMW_end = 36
 IR_DeviceTYPE = 37
 IR_ALARM = 38
+
+# MaNi additions
+IR_CurTEMP_ExAirIn = 1 # temperature for ingoing fresh air
+IR_CurTEMP_ExAirOut = 2 # temperature for outgoing air
+IR_CurFILTER_TIMER = 1 # countdown until filters needs cleaning or change
+IR_CurSuPRESS = 100 # air pressure for ingoing fresh air
+IR_CurExPRESS = 100 # air pressure for outgoing air
+# EO MaNi additions
