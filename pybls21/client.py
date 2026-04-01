@@ -181,6 +181,14 @@ class S21Client:
         operation_mode: int = holding_registers[HR_OPERATION_MODE]
         manual_fan_speed_percent: int = holding_registers[HR_ManualSPEED]
 
+        # MaNi additions
+        temp_air_incoming: int = holding_registers[IR_CurTEMP_ExAirIn]
+        temp_air_outgoing: int = holding_registers[IR_CurTEMP_ExAirOut]
+        filter_countdown: int = holding_registers[IR_CurFILTER_TIMER]
+        pressure_air_incoming: int = holding_registers[IR_CurSuPRESS]
+        pressure_air_outgoing: int = holding_registers[IR_CurExPRESS]
+        # EO MaNi additions
+        
         self.device = ClimateDevice(
             available=True,
             name="Blauberg S21",
