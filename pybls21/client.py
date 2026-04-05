@@ -197,9 +197,9 @@ class S21Client:
             precision=1,
             current_temperature=temp_after_heating_x10 / 10,
             target_temperature=set_temperature,
-            target_temperature_step=1,
-            min_temp=15,
-            max_temp=30,
+            target_temperature_step=2,
+            min_temp=10,
+            max_temp=35,
             current_humidity=None if current_humidity == 0 else current_humidity,
             hvac_mode=HVACMode.OFF
             if not is_on
