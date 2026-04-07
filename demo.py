@@ -8,7 +8,7 @@ from pybls21.client import S21Client
 
 
 def help():
-    print("pybls21ext demo app")
+    print("pybls21 demo app")
     print("syntax: demo.py [options]")
     print("options:")
     print("    --host <hvac_ip>      ... network address of your HVAC device")
