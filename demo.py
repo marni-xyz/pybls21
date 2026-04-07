@@ -4,7 +4,7 @@ import asyncio
 import logging
 import sys
 
-from pybls21.client import S21Client
+from pybls21ext.client import S21Client
 
 
 def help():
