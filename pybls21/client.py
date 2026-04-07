@@ -182,11 +182,15 @@ class S21Client:
         manual_fan_speed_percent: int = holding_registers[HR_ManualSPEED]
 
         # MaNi additions
-        temp_air_incoming: int = holding_registers[IR_CurTEMP_ExAirIn]
-        temp_air_outgoing: int = holding_registers[IR_CurTEMP_ExAirOut]
-        filter_countdown: int = holding_registers[IR_CurFILTER_TIMER]
-        pressure_air_incoming: int = holding_registers[IR_CurSuPRESS]
-        pressure_air_outgoing: int = holding_registers[IR_CurExPRESS]
+        temp_air_incoming: int = _to_signed_16bit(
+            input_registers[IR_CurTEMP_ExAirIn]
+        )
+        temp_air_outgoing: int = _to_signed_16bit(
+            input_registers[IR_CurTEMP_ExAirOut]
+        )
+        filter_countdown: int = input_registers[IR_CurFILTER_TIMER]
+        pressure_air_incoming: int = input_registers[IR_CurSuPRESS]
+        pressure_air_outgoing: int = input_registers[IR_CurExPRESS]
         # EO MaNi additions
         
         self.device = ClimateDevice(
