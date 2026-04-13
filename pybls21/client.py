@@ -261,12 +261,12 @@ class S21Client:
             current_outlet_temperature_in=temp_used_air_incoming_x10 / 10,   # used air rooms -> ventilation
             current_outlet_temperature_out=temp_used_air_outgoing_x10 / 10,  # used air ventilation -> outside 
             filter_countdown=filter_countdown,  # whole days until filter replacement
-            timer=is_timer,
+            is_timer=is_timer,
             timer_min=main_timer_min,
             timer_hrs=main_timer_hrs,
             pressure_air_incoming=pressure_air_incoming,
             pressure_air_outgoing=pressure_air_outgoing,
-            current_schedule_mode=is_schedule,
+            is_schedule_mode=is_schedule,
             current_schedule_mode_speed=current_schedule_mode_speed,
             # EO MaNi additions
         )
