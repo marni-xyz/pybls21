@@ -62,4 +62,5 @@ class ClimateDevice(NamedTuple):
     filter_countdown: int
     pressure_air_incoming: int
     pressure_air_outgoing: int
+    current_speed_schedule_mode: Optional[int]
     # EO MaNi additions
