@@ -56,8 +56,9 @@ class ClimateDevice(NamedTuple):
     extract_fan_speed: int
 
     # MaNi additions
-    current_temperature_fresh_air: float
-    current_temperature_consumed_air: float
+    current_intake_temperature_out: float
+    current_outlet_temperature_in: float
+    current_outlet_temperature_out: float
     filter_countdown: int
     pressure_air_incoming: int
     pressure_air_outgoing: int
