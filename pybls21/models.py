@@ -60,7 +60,11 @@ class ClimateDevice(NamedTuple):
     current_outlet_temperature_in: float
     current_outlet_temperature_out: float
     filter_countdown: int
+    timer: bool
+    timer_min: Optional[int]
+    timer_hrs: Optional[int]
     pressure_air_incoming: int
     pressure_air_outgoing: int
-    current_speed_schedule_mode: Optional[int]
+    current_schedule_mode: bool
+    current_schedule_mode_speed: Optional[int]
     # EO MaNi additions
