@@ -28,7 +28,12 @@ IR_ALARM = 38
 IR_CurTEMP_ExAirIn = 3 # temperature for ingoing fresh air
 IR_CurTEMP_ExAirOut = 4 # temperature for outgoing air
 IR_CurFILTER_TIMER = 28 # days until filters needs cleaning (address 27 refers to hours&minutes)
+IR_CurFILTER_STATUS = 31 # filter status (clean, error, replacement)
 IR_CurSuPRESS = 21 # air pressure for ingoing fresh air
 IR_CurExPRESS = 22 # air pressure for outgoing air
+CL_TIMER = 1  # main timer status
+IR_CurTIMER_TIME_MIN = 25 # countdown of main timer
+IR_CurTIMER_TIME_HRS = 26 # countdown of main timer
+CL_WEEK = 2  # schedule mode status
 IR_CurWeekSpeed = 32 # speed from current timeframe of schedule mode
 # EO MaNi additions
