@@ -182,6 +182,7 @@ class S21Client:
         manual_fan_speed_percent: int = holding_registers[HR_ManualSPEED]
 
         # MaNi additions
+        current_speed_schedule_mode: int = input_registers[IR_CurWeekSpeed]  # 0 - manual
         temp_used_air_incoming_x10: int = _to_signed_16bit(
             input_registers[IR_CurTEMP_ExAirIn]
         )
@@ -257,6 +258,7 @@ class S21Client:
             filter_countdown=filter_countdown,  # whole days until filter replacement
             pressure_air_incoming=pressure_air_incoming,
             pressure_air_outgoing=pressure_air_outgoing,
+            current_speed_schedule_mode=current_speed_schedule_mode,
             # EO MaNi additions
         )
 
