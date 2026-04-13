@@ -182,10 +182,10 @@ class S21Client:
         manual_fan_speed_percent: int = holding_registers[HR_ManualSPEED]
 
         # MaNi additions
-        temp_air_incoming: int = _to_signed_16bit(
+        temp_used_air_incoming_x10: int = _to_signed_16bit(
             input_registers[IR_CurTEMP_ExAirIn]
         )
-        temp_air_outgoing: int = _to_signed_16bit(
+        temp_used_air_outgoing_x10: int = _to_signed_16bit(
             input_registers[IR_CurTEMP_ExAirOut]
         )
         filter_countdown: int = input_registers[IR_CurFILTER_TIMER]
@@ -251,9 +251,10 @@ class S21Client:
             extract_fan_speed=extract_fan_speed,
 
             # MaNi additions
-            current_temperature_fresh_air=temp_air_incoming / 10,
-            current_temperature_consumed_air=temp_air_outgoing / 10,
-            filter_countdown=filter_countdown,
+            current_intake_temperature_out=temp_after_heating_x10 / 10,  # fresh air ventilation -> rooms
+            current_outlet_temperature_in=temp_used_air_incoming_x10 / 10,   # used air rooms -> ventilation
+            current_outlet_temperature_out=temp_used_air_outgoing_x10 / 10,  # used air ventilation -> outside 
+            filter_countdown=filter_countdown,  # whole days until filter replacement
             pressure_air_incoming=pressure_air_incoming,
             pressure_air_outgoing=pressure_air_outgoing,
             # EO MaNi additions
