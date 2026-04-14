@@ -240,7 +240,11 @@ class S21Client:
                 HVACMode.AUTO,
                 HVACMode.FAN_ONLY,
             ],
-            fan_mode=current_fan_level,
+            
+            # MaNi additions
+            ##fan_mode=current_fan_level,  # original considers manual level only and ignores override in scheduled mode
+            fan_mode=current_fan_level if not is_schedule else current_schedule_mode_speed,
+            # EO MaNi additions
             fan_modes=[x + 1 for x in range(max_fan_level)] + [255],
             supported_features=ClimateEntityFeature.TARGET_TEMPERATURE
             | ClimateEntityFeature.FAN_MODE,
@@ -266,7 +270,8 @@ class S21Client:
             pressure_air_incoming=pressure_air_incoming,
             pressure_air_outgoing=pressure_air_outgoing,
             is_schedule_mode=is_schedule,
-            current_schedule_mode_speed=current_schedule_mode_speed,
+            fan_level_schedule_mode=current_schedule_mode_speed,
+            fan_level_manual_mode=current_fan_level,
             # EO MaNi additions
         )
 
