@@ -65,5 +65,6 @@ class ClimateDevice(NamedTuple):
     pressure_air_incoming: Optional[int]
     pressure_air_outgoing: Optional[int]
     is_schedule_mode: bool
-    current_schedule_mode_speed: Optional[int]
+    fan_level_schedule_mode: Optional[int]
+    fan_level_manual_mode: Optional[int]
     # EO MaNi additions
