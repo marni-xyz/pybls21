@@ -262,8 +262,7 @@ class S21Client:
             current_outlet_temperature_out=temp_used_air_outgoing_x10 / 10,  # used air ventilation -> outside 
             filter_countdown=filter_countdown,  # whole days until filter replacement
             is_timer=is_timer,
-            timer_min=main_timer_min,
-            timer_hrs=main_timer_hrs,
+            timer_countdown = f"{main_timer_hrs:02d}:{main_timer_min:02d}",
             pressure_air_incoming=pressure_air_incoming,
             pressure_air_outgoing=pressure_air_outgoing,
             is_schedule_mode=is_schedule,
