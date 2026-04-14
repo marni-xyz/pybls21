@@ -181,6 +181,24 @@ class S21Client:
         operation_mode: int = holding_registers[HR_OPERATION_MODE]
         manual_fan_speed_percent: int = holding_registers[HR_ManualSPEED]
 
+        # MaNi additions
+        is_timer: bool = coils[CL_TIMER]
+        is_schedule: bool = coils[CL_WEEK]
+        main_timer_min: int = input_registers[IR_CurTIMER_TIME_MIN]
+        main_timer_hrs: int = input_registers[IR_CurTIMER_TIME_HRS]
+        current_schedule_mode: int = input_registers[IR_CurWeekSpeed]  # 0 - manual
+        current_schedule_mode_speed: int = input_registers[IR_CurWeekSpeed]  # 0 - manual
+        temp_used_air_incoming_x10: int = _to_signed_16bit(
+            input_registers[IR_CurTEMP_ExAirIn]
+        )
+        temp_used_air_outgoing_x10: int = _to_signed_16bit(
+            input_registers[IR_CurTEMP_ExAirOut]
+        )
+        filter_countdown: int = input_registers[IR_CurFILTER_TIMER]
+        pressure_air_incoming: int = input_registers[IR_CurSuPRESS]
+        pressure_air_outgoing: int = input_registers[IR_CurExPRESS]
+        # EO MaNi additions
+        
         self.device = ClimateDevice(
             available=True,
             name="Blauberg S21",
@@ -222,7 +240,11 @@ class S21Client:
                 HVACMode.AUTO,
                 HVACMode.FAN_ONLY,
             ],
-            fan_mode=current_fan_level,
+            
+            # MaNi additions
+            ##fan_mode=current_fan_level,  # original considers manual level only and ignores override in scheduled mode
+            fan_mode=current_fan_level if not is_schedule else current_schedule_mode_speed,
+            # EO MaNi additions
             fan_modes=[x + 1 for x in range(max_fan_level)] + [255],
             supported_features=ClimateEntityFeature.TARGET_TEMPERATURE
             | ClimateEntityFeature.FAN_MODE,
@@ -237,6 +259,20 @@ class S21Client:
             alarm_state=alarm_state,
             supply_fan_speed=supply_fan_speed,
             extract_fan_speed=extract_fan_speed,
+
+            # MaNi additions
+            current_intake_temperature_out=temp_after_heating_x10 / 10,  # fresh air ventilation -> rooms
+            current_outlet_temperature_in=temp_used_air_incoming_x10 / 10,   # used air rooms -> ventilation
+            current_outlet_temperature_out=temp_used_air_outgoing_x10 / 10,  # used air ventilation -> outside 
+            filter_countdown=filter_countdown,  # whole days until filter replacement
+            is_timer=is_timer,
+            timer_countdown = f"{main_timer_hrs:02d}:{main_timer_min:02d}",
+            pressure_air_incoming=pressure_air_incoming,
+            pressure_air_outgoing=pressure_air_outgoing,
+            is_schedule_mode=is_schedule,
+            fan_level_schedule_mode=current_schedule_mode_speed,
+            fan_level_manual_mode=current_fan_level,
+            # EO MaNi additions
         )
 
         return self.device

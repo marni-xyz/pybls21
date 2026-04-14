@@ -54,3 +54,17 @@ class ClimateDevice(NamedTuple):
     alarm_state: int
     supply_fan_speed: int
     extract_fan_speed: int
+
+    # MaNi additions
+    current_intake_temperature_out: float
+    current_outlet_temperature_in: float
+    current_outlet_temperature_out: float
+    filter_countdown: Optional[int]
+    is_timer: bool
+    timer_countdown: Optional[str]
+    pressure_air_incoming: Optional[int]
+    pressure_air_outgoing: Optional[int]
+    is_schedule_mode: bool
+    fan_level_schedule_mode: Optional[int]
+    fan_level_manual_mode: Optional[int]
+    # EO MaNi additions

@@ -115,6 +115,15 @@ class TestClient(unittest.IsolatedAsyncioTestCase):
         self.server.data_bank.set_input_registers(IR_ALARM, [2])
         self.server.data_bank.set_input_registers(IR_CurTEMP_SuAirIn, [108])
         self.server.data_bank.set_input_registers(IR_CurTEMP_SuAirOut, [192])
+
+        # MaNi additions
+        self.server.data_bank.set_input_registers(IR_CurTEMP_ExAirIn, [120])
+        self.server.data_bank.set_input_registers(IR_CurTEMP_ExAirOut, [130])
+        self.server.data_bank.set_input_registers(IR_CurFILTER_TIMER, [42])
+        self.server.data_bank.set_input_registers(IR_CurSuPRESS, [400])
+        self.server.data_bank.set_input_registers(IR_CurExPRESS, [444])
+        # EO MaNi additions
+
         self.server.data_bank.set_input_registers(
             IR_VerMAIN_FMW_start, [36, 2053, 2019]
         )
@@ -159,7 +168,15 @@ class TestClient(unittest.IsolatedAsyncioTestCase):
                 filter_state=3,
                 alarm_state=2,
                 supply_fan_speed=10,
-                extract_fan_speed=20
+                extract_fan_speed=20,
+
+                # MaNi additions
+                current_temperature_fresh_air=12.3,
+                current_temperature_consumed_air=13.5,
+                filter_countdown=42,
+                pressure_air_incoming=333,
+                pressure_air_outgoing=444
+                # EO MaNi additions
             ),
         )
 
