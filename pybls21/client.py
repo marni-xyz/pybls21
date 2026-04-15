@@ -146,7 +146,11 @@ class S21Client:
                 return await func()
             except Exception:
                 if isinstance(self.device, ClimateDevice):
-                    self.device.available = False
+                    # MaNi additions
+                    # ClimateDevice is NamedTuple, which is immutable and requires use of NamedTuple method
+                    #self.device.available = False
+                    self.device = self.device._replace(available=False)
+                    # EO MaNi additions
                 raise
             finally:
                 self.client.close()  # Also, long connections break over time and become unusable
