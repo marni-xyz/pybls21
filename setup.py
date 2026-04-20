@@ -18,7 +18,7 @@ setuptools.setup(
     ],
     extras_require={
         "dev": [
-            "pyModbusTCP", # additional import for test only (Modbus-Server-Mock)
+            "pyModbusTCP>=0.3.0", # additional import for test only (Modbus-Server-Mock)
         ]
     },
     classifiers=[
