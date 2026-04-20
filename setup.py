@@ -13,7 +13,14 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     url="https://github.com/marni-xyz/pybls21",
     packages=setuptools.find_packages(exclude=["tests"]),
-    install_requires=["pymodbus>=3.11.2,<4.0"],
+    install_requires=[
+        "pymodbus>=3.11.2,<4.0",
+    ],
+    extras_require={
+        "dev": [
+            "pyModbusTCP", # additional import for test only (Modbus-Server-Mock)
+        ]
+    },
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",
