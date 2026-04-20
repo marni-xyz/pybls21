@@ -190,7 +190,6 @@ class S21Client:
         is_schedule: bool = coils[CL_WEEK]
         main_timer_min: int = input_registers[IR_CurTIMER_TIME_MIN]
         main_timer_hrs: int = input_registers[IR_CurTIMER_TIME_HRS]
-        current_schedule_mode: int = input_registers[IR_CurWeekSpeed]  # 0 - manual
         current_schedule_mode_speed: int = input_registers[IR_CurWeekSpeed]  # 0 - manual
         temp_used_air_incoming_x10: int = _to_signed_16bit(
             input_registers[IR_CurTEMP_ExAirIn]
