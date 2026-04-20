@@ -1,6 +1,11 @@
 import asyncio
 from typing import Any, Awaitable, Callable, List, Optional
 
+# MaNi additions
+import logging
+_LOGGER = logging.getLogger(__name__)
+# EO MaNi additions
+
 from pymodbus.client import AsyncModbusTcpClient
 
 from .constants import *
@@ -147,11 +152,17 @@ class S21Client:
     async def _do_with_connection(self, func: Callable[[], Awaitable[Any]]) -> Any:
         async with self.lock:  # Device does not support multiple connections
             if not await self.client.connect():
+                # MaNi additions
+                _LOGGER.error("Failed to open Modbus TCP connection to %s:%s", self.host, self.port)
+                # EO MaNi additions
                 raise ModbusCommunicationException("Failed to open Modbus TCP connection")
 
             try:
                 return await func()
             except Exception:
+                # MaNi additions
+                _LOGGER.warning("Modbus operation failed for %s:%s: %s", self.host, self.port, exc)
+                # EO MaNi additions
                 if isinstance(self.device, ClimateDevice):
                     # MaNi additions
                     # ClimateDevice is NamedTuple, which is immutable and requires use of NamedTuple method
@@ -163,6 +174,10 @@ class S21Client:
                 self.client.close()  # Also, long connections break over time and become unusable
 
     async def _poll(self) -> ClimateDevice:
+        # MaNi additions
+        _LOGGER.debug("Polling device at %s:%s", self.host, self.port)
+        # EO MaNi additions
+        
         if (await self._read_input_registers(IR_DeviceTYPE, count=1))[0] != 1:
             raise UnsupportedDeviceException("Unsupported device (IR_DeviceTYPE != 1)")
 
@@ -284,7 +299,12 @@ class S21Client:
             fan_level_manual_mode=current_fan_level,
             # EO MaNi additions
         )
-
+        
+        # MaNi additions
+        _LOGGER.debug("Poll successful: mode=%s, fan=%s, temp=%s, alarm=%s",
+                  self.device.hvac_mode, self.device.fan_mode, self.device.current_temperature, self.device.alarm_state)
+        # EO MaNi additions
+        
         return self.device
 
     async def _turn_on(self) -> None:
