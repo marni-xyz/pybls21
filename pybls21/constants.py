@@ -28,8 +28,8 @@ IR_ALARM = 38
 CL_TIMER = 1  # main timer status
 CL_WEEK = 2  # schedule mode status
 
-IR_CurTEMP_ExAirIn = 3 # temperature for ingoing fresh air
-IR_CurTEMP_ExAirOut = 4 # temperature for outgoing air
+IR_CurTEMP_ExAirIn = 3 # temperature for outgoing air (room->ventilation)
+IR_CurTEMP_ExAirOut = 4 # temperature for outgoing air (ventilation->outside)
 IR_CurFILTER_TIMER = 28 # days until filters needs cleaning (address 27 refers to hours&minutes)
 IR_CurSuPRESS = 21 # air pressure for ingoing fresh air
 IR_CurExPRESS = 22 # air pressure for outgoing air
