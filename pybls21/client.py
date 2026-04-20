@@ -4,7 +4,10 @@ from typing import Any, Awaitable, Callable, List, Optional
 from pymodbus.client import AsyncModbusTcpClient
 
 from .constants import *
-from .exceptions import *
+from .exceptions import (
+    ModbusCommunicationException,
+    UnsupportedDeviceException,
+)
 from .models import (
     TEMP_CELSIUS,
     ClimateDevice,
