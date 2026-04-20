@@ -15,13 +15,17 @@ from .models import (
 
 
 def _parse_firmware_version(firmware_info: List[int]) -> str:
-    major, minor = firmware_info[0].to_bytes(2, "big")
+    if not isinstance(firmware_info, list) or len(firmware_info) < 3:
+        return "unknown"
+    
+    try:
+        major, minor = firmware_info[0].to_bytes(2, "big")
+        day, month = firmware_info[1].to_bytes(2, "big")
+        year: int = firmware_info[2]
+        return f"{major}.{minor} ({year}-{month:02d}-{day:02d})"
 
-    day, month = firmware_info[1].to_bytes(2, "big")
-    year: int = firmware_info[2]
-
-    return f"{major}.{minor} ({year}-{month:02d}-{day:02d})"
-
+    except (ValueError, OverflowError):
+        return "unknown"
 
 def _to_signed_16bit(value: int) -> int:
     return value - 0x10000 if value > 0x7FFF else value
