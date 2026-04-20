@@ -122,8 +122,7 @@ class TestClient(unittest.IsolatedAsyncioTestCase):
         self.server.data_bank.set_input_registers(IR_CurFILTER_TIMER, [42])
         self.server.data_bank.set_input_registers(IR_CurSuPRESS, [400])
         self.server.data_bank.set_input_registers(IR_CurExPRESS, [444])
-        self.server.data_bank.set_input_registers(IR_CurTIMER_TIME_MIN, [12])
-        self.server.data_bank.set_input_registers(IR_CurTIMER_TIME_HRS, [2])
+        self.server.data_bank.set_input_registers(IR_CurTIMER_TIME_MIN, [27])
         self.server.data_bank.set_input_registers(IR_CurTIMER_TIME_HRS, [2])
         self.server.data_bank.set_coils(CL_TIMER, [True])
         self.server.data_bank.set_coils(CL_WEEK, [True])
@@ -181,7 +180,7 @@ class TestClient(unittest.IsolatedAsyncioTestCase):
                 current_outlet_temperature_out=10.9,
                 filter_countdown=42,
                 is_timer=True,
-                timer_countdown = "02:14",
+                timer_countdown = "02:27",
                 pressure_air_incoming=333,
                 pressure_air_outgoing=444,
                 is_schedule_mode=True,
