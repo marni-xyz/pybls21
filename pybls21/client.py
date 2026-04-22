@@ -1,10 +1,18 @@
 import asyncio
 from typing import Any, Awaitable, Callable, List, Optional
 
+# MaNi additions
+import logging
+_LOGGER = logging.getLogger(__name__)
+# EO MaNi additions
+
 from pymodbus.client import AsyncModbusTcpClient
 
 from .constants import *
-from .exceptions import *
+from .exceptions import (
+    ModbusCommunicationException,
+    UnsupportedDeviceException,
+)
 from .models import (
     TEMP_CELSIUS,
     ClimateDevice,
@@ -15,13 +23,17 @@ from .models import (
 
 
 def _parse_firmware_version(firmware_info: List[int]) -> str:
-    major, minor = firmware_info[0].to_bytes(2, "big")
+    if not isinstance(firmware_info, list) or len(firmware_info) < 3:
+        return "unknown"
+    
+    try:
+        major, minor = firmware_info[0].to_bytes(2, "big")
+        day, month = firmware_info[1].to_bytes(2, "big")
+        year: int = firmware_info[2]
+        return f"{major}.{minor} ({year}-{month:02d}-{day:02d})"
 
-    day, month = firmware_info[1].to_bytes(2, "big")
-    year: int = firmware_info[2]
-
-    return f"{major}.{minor} ({year}-{month:02d}-{day:02d})"
-
+    except (ValueError, OverflowError):
+        return "unknown"
 
 def _to_signed_16bit(value: int) -> int:
     return value - 0x10000 if value > 0x7FFF else value
@@ -140,11 +152,17 @@ class S21Client:
     async def _do_with_connection(self, func: Callable[[], Awaitable[Any]]) -> Any:
         async with self.lock:  # Device does not support multiple connections
             if not await self.client.connect():
+                # MaNi additions
+                _LOGGER.error("Failed to open Modbus TCP connection to %s:%s", self.host, self.port)
+                # EO MaNi additions
                 raise ModbusCommunicationException("Failed to open Modbus TCP connection")
 
             try:
                 return await func()
             except Exception:
+                # MaNi additions
+                _LOGGER.warning("Modbus operation failed for %s:%s: %s", self.host, self.port, exc)
+                # EO MaNi additions
                 if isinstance(self.device, ClimateDevice):
                     self.device.available = False
                 raise
@@ -152,6 +170,10 @@ class S21Client:
                 self.client.close()  # Also, long connections break over time and become unusable
 
     async def _poll(self) -> ClimateDevice:
+        # MaNi additions
+        _LOGGER.debug("Polling device at %s:%s", self.host, self.port)
+        # EO MaNi additions
+        
         if (await self._read_input_registers(IR_DeviceTYPE, count=1))[0] != 1:
             raise UnsupportedDeviceException("Unsupported device (IR_DeviceTYPE != 1)")
 
@@ -186,7 +208,6 @@ class S21Client:
         is_schedule: bool = coils[CL_WEEK]
         main_timer_min: int = input_registers[IR_CurTIMER_TIME_MIN]
         main_timer_hrs: int = input_registers[IR_CurTIMER_TIME_HRS]
-        current_schedule_mode: int = input_registers[IR_CurWeekSpeed]  # 0 - manual
         current_schedule_mode_speed: int = input_registers[IR_CurWeekSpeed]  # 0 - manual
         temp_used_air_incoming_x10: int = _to_signed_16bit(
             input_registers[IR_CurTEMP_ExAirIn]
@@ -211,28 +232,20 @@ class S21Client:
             min_temp=15,
             max_temp=30,
             current_humidity=None if current_humidity == 0 else current_humidity,
-            hvac_mode=HVACMode.OFF
-            if not is_on
-            else HVACMode.FAN_ONLY
-            if operation_mode == 0
-            else HVACMode.HEAT
-            if operation_mode == 1
-            else HVACMode.COOL
-            if operation_mode == 2
-            else HVACMode.AUTO,
-            hvac_action=HVACAction.OFF
-            if not is_on
-            else HVACAction.FAN
-            if operation_mode == 0
-            else HVACAction.HEATING
-            if operation_mode == 1
-            else HVACAction.COOLING
-            if operation_mode == 2
-            else HVACAction.HEATING
-            if temp_before_heating_x10 < temp_after_heating_x10
-            else HVACAction.COOLING
-            if temp_before_heating_x10 > temp_after_heating_x10
-            else HVACAction.IDLE,
+            hvac_mode=
+                HVACMode.OFF if not is_on
+                else HVACMode.FAN_ONLY if operation_mode == 0
+                else HVACMode.HEAT if operation_mode == 1
+                else HVACMode.COOL if operation_mode == 2
+                else HVACMode.AUTO,
+            hvac_action=
+                HVACAction.OFF if not is_on
+                else HVACAction.FAN if operation_mode == 0
+                else HVACAction.HEATING if operation_mode == 1
+                else HVACAction.COOLING if operation_mode == 2
+                else HVACAction.HEATING if temp_before_heating_x10 < temp_after_heating_x10
+                else HVACAction.COOLING if temp_before_heating_x10 > temp_after_heating_x10
+                else HVACAction.IDLE,
             hvac_modes=[
                 HVACMode.OFF,
                 HVACMode.HEAT,
@@ -274,7 +287,12 @@ class S21Client:
             fan_level_manual_mode=current_fan_level,
             # EO MaNi additions
         )
-
+        
+        # MaNi additions
+        _LOGGER.debug("Poll successful: mode=%s, fan=%s, temp=%s, alarm=%s",
+                  self.device.hvac_mode, self.device.fan_mode, self.device.current_temperature, self.device.alarm_state)
+        # EO MaNi additions
+        
         return self.device
 
     async def _turn_on(self) -> None:

@@ -1,0 +1,1 @@
+-e ".[dev]"   # install additional packages for dev/testing

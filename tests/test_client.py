@@ -117,11 +117,15 @@ class TestClient(unittest.IsolatedAsyncioTestCase):
         self.server.data_bank.set_input_registers(IR_CurTEMP_SuAirOut, [192])
 
         # MaNi additions
-        self.server.data_bank.set_input_registers(IR_CurTEMP_ExAirIn, [120])
-        self.server.data_bank.set_input_registers(IR_CurTEMP_ExAirOut, [130])
+        self.server.data_bank.set_input_registers(IR_CurTEMP_ExAirIn, [207])
+        self.server.data_bank.set_input_registers(IR_CurTEMP_ExAirOut, [181])
         self.server.data_bank.set_input_registers(IR_CurFILTER_TIMER, [42])
         self.server.data_bank.set_input_registers(IR_CurSuPRESS, [400])
         self.server.data_bank.set_input_registers(IR_CurExPRESS, [444])
+        self.server.data_bank.set_input_registers(IR_CurTIMER_TIME_MIN, [27])
+        self.server.data_bank.set_input_registers(IR_CurTIMER_TIME_HRS, [2])
+        self.server.data_bank.set_coils(CL_TIMER, [True])
+        self.server.data_bank.set_coils(CL_WEEK, [True])
         # EO MaNi additions
 
         self.server.data_bank.set_input_registers(
@@ -171,11 +175,17 @@ class TestClient(unittest.IsolatedAsyncioTestCase):
                 extract_fan_speed=20,
 
                 # MaNi additions
-                current_temperature_fresh_air=12.3,
-                current_temperature_consumed_air=13.5,
+                current_intake_temperature_out=12.3,
+                current_outlet_temperature_in=13.5,
+                current_outlet_temperature_out=10.9,
                 filter_countdown=42,
+                is_timer=True,
+                timer_countdown = "02:27",
                 pressure_air_incoming=333,
-                pressure_air_outgoing=444
+                pressure_air_outgoing=444,
+                is_schedule_mode=True,
+                fan_level_schedule_mode=2,
+                fan_level_manual_mode=1,
                 # EO MaNi additions
             ),
         )
