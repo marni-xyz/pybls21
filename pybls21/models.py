@@ -1,5 +1,9 @@
 from enum import Enum
-from typing import List, NamedTuple, Optional
+# MaNi - conversion to dataclass (more robust and mutable)
+#from typing import List, NamedTuple, Optional
+from dataclasses import dataclass, field
+from typing import List, Optional
+# EO MaNi - conversion to dataclass
 
 TEMP_CELSIUS: str = "°C"
 
@@ -25,7 +29,11 @@ class HVACAction(str, Enum):
     OFF = "off"
 
 
-class ClimateDevice(NamedTuple):
+# MaNi - conversion to dataclass
+#class ClimateDevice(NamedTuple):
+@dataclass
+class ClimateDevice:
+# EO MaNi - conversion to dataclass
     available: bool
     name: str
     unique_id: str
@@ -36,16 +44,11 @@ class ClimateDevice(NamedTuple):
     target_temperature_step: float
     max_temp: float
     min_temp: float
-    current_humidity: Optional[float]
     hvac_mode: str
     hvac_action: str
     hvac_modes: List[str]
-    fan_mode: Optional[int]
-    fan_modes: Optional[List[int]]
     supported_features: int
     manufacturer: str
-    model: Optional[str]
-    sw_version: Optional[str]
     is_boosting: bool
     current_intake_temperature: float
     manual_fan_speed_percent: int
@@ -59,12 +62,21 @@ class ClimateDevice(NamedTuple):
     current_intake_temperature_out: float
     current_outlet_temperature_in: float
     current_outlet_temperature_out: float
-    filter_countdown: Optional[int]
     is_timer: bool
-    timer_countdown: Optional[str]
-    pressure_air_incoming: Optional[int]
-    pressure_air_outgoing: Optional[int]
     is_schedule_mode: bool
-    fan_level_schedule_mode: Optional[int]
-    fan_level_manual_mode: Optional[int]
+    # EO MaNi additions
+
+    current_humidity: Optional[float] = None
+    fan_mode: Optional[int] = None
+    fan_modes: Optional[List[int]] = None
+    model: Optional[str] = None
+    sw_version: Optional[str] = None
+
+    # MaNi additions
+    filter_countdown: Optional[int] = None
+    timer_countdown: Optional[str] = None
+    pressure_air_incoming: Optional[int] = None
+    pressure_air_outgoing: Optional[int] = None
+    fan_level_schedule_mode: Optional[int] = None
+    fan_level_manual_mode: Optional[int] = None
     # EO MaNi additions
