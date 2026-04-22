@@ -164,11 +164,7 @@ class S21Client:
                 _LOGGER.warning("Modbus operation failed for %s:%s: %s", self.host, self.port, exc)
                 # EO MaNi additions
                 if isinstance(self.device, ClimateDevice):
-                    # MaNi additions
-                    # ClimateDevice is NamedTuple, which is immutable and requires use of NamedTuple method
-                    #self.device.available = False
-                    self.device = self.device._replace(available=False)
-                    # EO MaNi additions
+                    self.device.available = False
                 raise
             finally:
                 self.client.close()  # Also, long connections break over time and become unusable
@@ -236,28 +232,20 @@ class S21Client:
             min_temp=15,
             max_temp=30,
             current_humidity=None if current_humidity == 0 else current_humidity,
-            hvac_mode=HVACMode.OFF
-            if not is_on
-            else HVACMode.FAN_ONLY
-            if operation_mode == 0
-            else HVACMode.HEAT
-            if operation_mode == 1
-            else HVACMode.COOL
-            if operation_mode == 2
-            else HVACMode.AUTO,
-            hvac_action=HVACAction.OFF
-            if not is_on
-            else HVACAction.FAN
-            if operation_mode == 0
-            else HVACAction.HEATING
-            if operation_mode == 1
-            else HVACAction.COOLING
-            if operation_mode == 2
-            else HVACAction.HEATING
-            if temp_before_heating_x10 < temp_after_heating_x10
-            else HVACAction.COOLING
-            if temp_before_heating_x10 > temp_after_heating_x10
-            else HVACAction.IDLE,
+            hvac_mode=
+                HVACMode.OFF if not is_on
+                else HVACMode.FAN_ONLY if operation_mode == 0
+                else HVACMode.HEAT if operation_mode == 1
+                else HVACMode.COOL if operation_mode == 2
+                else HVACMode.AUTO,
+            hvac_action=
+                HVACAction.OFF if not is_on
+                else HVACAction.FAN if operation_mode == 0
+                else HVACAction.HEATING if operation_mode == 1
+                else HVACAction.COOLING if operation_mode == 2
+                else HVACAction.HEATING if temp_before_heating_x10 < temp_after_heating_x10
+                else HVACAction.COOLING if temp_before_heating_x10 > temp_after_heating_x10
+                else HVACAction.IDLE,
             hvac_modes=[
                 HVACMode.OFF,
                 HVACMode.HEAT,
