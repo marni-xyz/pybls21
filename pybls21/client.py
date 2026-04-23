@@ -159,8 +159,9 @@ class S21Client:
 
             try:
                 return await func()
-            except Exception:
-                # MaNi additions
+            # MaNi additions
+            #except Exception:
+            except Exception as exc:
                 _LOGGER.warning("Modbus operation failed for %s:%s: %s", self.host, self.port, exc)
                 # EO MaNi additions
                 if isinstance(self.device, ClimateDevice):
