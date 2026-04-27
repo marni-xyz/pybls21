@@ -251,28 +251,40 @@ class S21Client:
         await self._write_coil(CL_RESET_ALARM, True)
 
     async def turn_on(self) -> None:
-        await self._do_with_connection(self._turn_on)
+        await self._do_with_connection(self._set_turn_on)
 
-    async def _turn_on(self) -> None:
+    async def _set_turn_on(self) -> None:
         await self._write_coil(CL_POWER, True)
 
     async def turn_off(self) -> None:
-        await self._do_with_connection(self._turn_off)
+        await self._do_with_connection(self._set_turn_off)
 
-    async def _turn_off(self) -> None:
+    async def _set_turn_off(self) -> None:
         await self._write_coil(CL_POWER, False)
 
-    async def _boost_on(self) -> None:
-        await self._do_with_connection(self._boost_on)
+    async def set_boost_on(self) -> None:
+        await self._do_with_connection(self._set_boost_on)
 
-    async def _boost_on(self) -> None:
+    async def _set_boost_on(self) -> None:
         await self._write_coil(CL_BoostSWITCH_CTRL, True)
 
-    async def boost_off(self) -> None:
-        await self._do_with_connection(self._boost_off)
+    async def set_boost_off(self) -> None:
+        await self._do_with_connection(self._set_boost_off)
 
-    async def _boost_off(self) -> None:
+    async def _set_boost_off(self) -> None:
         await self._write_coil(CL_BoostSWITCH_CTRL, False)
+
+    async def set_timer_on(self) -> None:
+        await self._do_with_connection(self._set_timer_on)
+
+    async def _set_timer_on(self) -> None:
+        await self._write_coil(CL_TIMER, True)
+    
+    async def set_timer_off(self) -> None:
+        await self._do_with_connection(self._set_timer_off)
+
+    async def _set_timer_off(self) -> None:
+        await self._write_coil(CL_TIMER, False)
 
 
     # -----------------------------------------------------------
