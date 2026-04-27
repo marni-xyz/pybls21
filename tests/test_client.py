@@ -125,6 +125,7 @@ class TestClient(unittest.IsolatedAsyncioTestCase):
         self.server.data_bank.set_input_registers(IR_CurTIMER_TIME_MIN, [27])
         self.server.data_bank.set_input_registers(IR_CurTIMER_TIME_HRS, [2])
         self.server.data_bank.set_coils(CL_TIMER, [True])
+        self.server.data_bank.set_input_registers(IR_CurWeekSpeed, [1])
         self.server.data_bank.set_coils(CL_WEEK, [True])
         # EO MaNi additions
 
@@ -184,8 +185,8 @@ class TestClient(unittest.IsolatedAsyncioTestCase):
                 pressure_air_incoming=333,
                 pressure_air_outgoing=444,
                 is_schedule_mode=True,
-                fan_level_schedule_mode=2,
-                fan_level_manual_mode=1,
+                fan_level_schedule_mode=1,
+                fan_level_manual_mode=2,
                 # EO MaNi additions
             ),
         )
@@ -503,21 +504,37 @@ class TestClient(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(self.server.data_bank.get_coils(CL_RESET_ALARM, 1), [True])
 
-    async def test_boost_on(self):
+    async def test_set_boost_on(self):
         self.server.data_bank.set_coils(CL_BoostSWITCH_CTRL, [False])
 
         client = S21Client(host=self.server.host, port=self.server.port)
-        await client.boost_on()
+        await client.set_boost_on()
 
         self.assertEqual(self.server.data_bank.get_coils(CL_BoostSWITCH_CTRL, 1), [True])
 
-    async def test_boost_off(self):
+    async def test_set_boost_off(self):
         self.server.data_bank.set_coils(CL_BoostSWITCH_CTRL, [True])
 
         client = S21Client(host=self.server.host, port=self.server.port)
-        await client.boost_off()
+        await client.set_boost_off()
 
         self.assertEqual(self.server.data_bank.get_coils(CL_BoostSWITCH_CTRL, 1), [False])
+
+    async def test_set_timer_on(self):
+        self.server.data_bank.set_coils(CL_TIMER, [False])
+
+        client = S21Client(host=self.server.host, port=self.server.port)
+        await client.set_timer_on()
+
+        self.assertEqual(self.server.data_bank.get_coils(CL_TIMER, 1), [True])
+
+    async def test_set_timer_off(self):
+        self.server.data_bank.set_coils(CL_TIMER, [True])
+
+        client = S21Client(host=self.server.host, port=self.server.port)
+        await client.set_timer_off()
+
+        self.assertEqual(self.server.data_bank.get_coils(CL_TIMER, 1), [False])
 
 
 class TestDataBank(DataBank):
