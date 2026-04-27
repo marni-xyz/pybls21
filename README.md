@@ -28,7 +28,7 @@ Available methods to change B21 settings:
  |---------------------------------------------|--------------------------------------|
  | `turn_on()` / `turn_off()`                  | Power on/off the device              |
  | `set_boost_on()` / `set_boost_off()`        | Enable/disable boost mode            |
- | `set_timer_on()` / `set_timer_off()`        | Enable/disable timer                 |
+ | `set_timer_on()` / `set_timer_off()`        | Enable/disable timer mode            |
  | `set_hvac_mode(hvac_mode: HVACMode)`        | Set HVAC mode                        |
  | `set_fan_mode(mode: int)`                   | Set fan mode                         |
  | `set_manual_fan_speed_percent(speed: int)`  | Set manual fan speed (0-100%)        |
@@ -39,8 +39,8 @@ Available methods to change B21 settings:
 
 ## Testing
 
-To check connectivity and general output from your Blauberg S21 device:
+To test connectivity and general output from your Blauberg S21 device, run:
 
-```python
-demo.py --host 192.168.0.125 --port 502
+```bash
+python demo.py --host 192.168.0.125 --port 502
 ```
