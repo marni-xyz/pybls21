@@ -47,128 +47,10 @@ class S21Client:
         self.device: Optional[ClimateDevice] = None
         self.lock = asyncio.Lock()
 
+    # -----------------------------------------------------------
+    # Functions to get device information
     async def poll(self) -> ClimateDevice:
         return await self._do_with_connection(self._poll)
-
-    async def turn_on(self) -> None:
-        await self._do_with_connection(self._turn_on)
-
-    async def turn_off(self) -> None:
-        await self._do_with_connection(self._turn_off)
-
-    async def set_hvac_mode(self, hvac_mode: HVACMode) -> None:
-        await self._do_with_connection(lambda: self._set_hvac_mode(hvac_mode))
-
-    async def set_fan_mode(self, mode: int) -> None:
-        self._validate_fan_mode(mode)
-        await self._do_with_connection(lambda: self._set_fan_mode(mode))
-
-    async def set_manual_fan_speed_percent(self, speed_percent: int) -> None:
-        self._validate_manual_fan_speed_percent(speed_percent)
-        await self._do_with_connection(
-            lambda: self._set_manual_fan_speed_percent(speed_percent)
-        )
-
-    async def set_temperature(self, temp_celsius: int) -> None:
-        self._validate_temperature(temp_celsius)
-        await self._do_with_connection(lambda: self._set_temperature(temp_celsius))
-
-    async def reset_filter_change_timer(self) -> None:
-        await self._do_with_connection(self._reset_filter_change_timer)
-
-    async def reset_alarm(self) -> None:
-        await self._do_with_connection(self._reset_alarm)
-
-    async def boost_on(self) -> None:
-        await self._do_with_connection(self._set_boost_on)
-
-    async def boost_off(self) -> None:
-        await self._do_with_connection(self._set_boost_off)
-
-    @staticmethod
-    def _validate_modbus_response(response: Any, operation: str) -> Any:
-        if response is None:
-            raise ModbusCommunicationException(f"Modbus {operation} failed: empty response")
-
-        is_error = getattr(response, "isError", None)
-        if callable(is_error) and response.isError():
-            raise ModbusCommunicationException(
-                f"Modbus {operation} failed: {response!r}"
-            )
-
-        return response
-
-    def _get_registers(self, response: Any, count: int, operation: str) -> List[int]:
-        registers = getattr(self._validate_modbus_response(response, operation), "registers", None)
-        if not isinstance(registers, list) or len(registers) < count:
-            raise ModbusCommunicationException(
-                f"Modbus {operation} failed: expected {count} registers"
-            )
-        return registers
-
-    def _get_bits(self, response: Any, count: int, operation: str) -> List[bool]:
-        bits = getattr(self._validate_modbus_response(response, operation), "bits", None)
-        if not isinstance(bits, list) or len(bits) < count:
-            raise ModbusCommunicationException(
-                f"Modbus {operation} failed: expected {count} coil bits"
-            )
-        return bits
-
-    @staticmethod
-    def _validate_fan_mode(mode: int) -> None:
-        if not isinstance(mode, int) or mode not in (1, 2, 3, 4, 5, 255):
-            raise ValueError("Fan mode must be one of: 1, 2, 3, 4, 5, 255")
-
-    @staticmethod
-    def _validate_manual_fan_speed_percent(speed_percent: int) -> None:
-        if not isinstance(speed_percent, int) or not 0 <= speed_percent <= 100:
-            raise ValueError("Manual fan speed percent must be between 0 and 100")
-
-    @staticmethod
-    def _validate_temperature(temp_celsius: int) -> None:
-        if not isinstance(temp_celsius, int) or not 15 <= temp_celsius <= 30:
-            raise ValueError("Temperature must be between 15 and 30 °C")
-
-    async def _read_input_registers(self, address: int, count: int) -> List[int]:
-        response = await self.client.read_input_registers(address, count=count)
-        return self._get_registers(response, count, f"read input registers at {address}")
-
-    async def _read_holding_registers(self, address: int, count: int) -> List[int]:
-        response = await self.client.read_holding_registers(address, count=count)
-        return self._get_registers(response, count, f"read holding registers at {address}")
-
-    async def _read_coils(self, address: int, count: int) -> List[bool]:
-        response = await self.client.read_coils(address, count=count)
-        return self._get_bits(response, count, f"read coils at {address}")
-
-    async def _write_register(self, address: int, value: int) -> None:
-        response = await self.client.write_register(address, value)
-        self._validate_modbus_response(response, f"write register {address}")
-
-    async def _write_coil(self, address: int, value: bool) -> None:
-        response = await self.client.write_coil(address, value)
-        self._validate_modbus_response(response, f"write coil {address}")
-
-    async def _do_with_connection(self, func: Callable[[], Awaitable[Any]]) -> Any:
-        async with self.lock:  # Device does not support multiple connections
-            if not await self.client.connect():
-                # MaNi additions
-                _LOGGER.error("Failed to open Modbus TCP connection to %s:%s", self.host, self.port)
-                # EO MaNi additions
-                raise ModbusCommunicationException("Failed to open Modbus TCP connection")
-
-            try:
-                return await func()
-            # MaNi additions
-            #except Exception:
-            except Exception as exc:
-                _LOGGER.warning("Modbus operation failed for %s:%s: %s", self.host, self.port, exc)
-                # EO MaNi additions
-                if isinstance(self.device, ClimateDevice):
-                    self.device.available = False
-                raise
-            finally:
-                self.client.close()  # Also, long connections break over time and become unusable
 
     async def _poll(self) -> ClimateDevice:
         # MaNi additions
@@ -296,11 +178,11 @@ class S21Client:
         
         return self.device
 
-    async def _turn_on(self) -> None:
-        await self._write_coil(CL_POWER, True)
 
-    async def _turn_off(self) -> None:
-        await self._write_coil(CL_POWER, False)
+    # -----------------------------------------------------------
+    # Functions to change individual settings
+    async def set_hvac_mode(self, hvac_mode: HVACMode) -> None:
+        await self._do_with_connection(lambda: self._set_hvac_mode(hvac_mode))
 
     async def _set_hvac_mode(self, hvac_mode: HVACMode) -> None:
         if hvac_mode == HVACMode.OFF:
@@ -318,23 +200,149 @@ class S21Client:
             await self._turn_on()
             await self._write_register(HR_OPERATION_MODE, 3)
 
+    async def set_fan_mode(self, mode: int) -> None:
+        self._validate_fan_mode(mode)
+        await self._do_with_connection(lambda: self._set_fan_mode(mode))
+
     async def _set_fan_mode(self, mode: int) -> None:
         await self._write_register(HR_SPEED_MODE, mode)
+    
+    @staticmethod
+    def _validate_fan_mode(mode: int) -> None:
+        if not isinstance(mode, int) or mode not in (1, 2, 3, 4, 5, 255):
+            raise ValueError("Fan mode must be one of: 1, 2, 3, 4, 5, 255")
+
+    async def set_manual_fan_speed_percent(self, speed_percent: int) -> None:
+        self._validate_manual_fan_speed_percent(speed_percent)
+        await self._do_with_connection(
+            lambda: self._set_manual_fan_speed_percent(speed_percent)
+        )
 
     async def _set_manual_fan_speed_percent(self, speed_percent: int) -> None:
         await self._write_register(HR_ManualSPEED, speed_percent)
 
+    @staticmethod
+    def _validate_manual_fan_speed_percent(speed_percent: int) -> None:
+        if not isinstance(speed_percent, int) or not 0 <= speed_percent <= 100:
+            raise ValueError("Manual fan speed percent must be between 0 and 100")
+
+    async def set_temperature(self, temp_celsius: int) -> None:
+        self._validate_temperature(temp_celsius)
+        await self._do_with_connection(lambda: self._set_temperature(temp_celsius))
+
     async def _set_temperature(self, temp_celsius: int) -> None:
         await self._write_register(HR_SetTEMP, temp_celsius)
+
+    @staticmethod
+    def _validate_temperature(temp_celsius: int) -> None:
+        if not isinstance(temp_celsius, int) or not 15 <= temp_celsius <= 30:
+            raise ValueError("Temperature must be between 15 and 30 °C")
+
+    async def reset_filter_change_timer(self) -> None:
+        await self._do_with_connection(self._reset_filter_change_timer)
 
     async def _reset_filter_change_timer(self) -> None:
         await self._write_coil(CL_RESET_FILTER_TIMER, True)
 
+    async def reset_alarm(self) -> None:
+        await self._do_with_connection(self._reset_alarm)
+
     async def _reset_alarm(self) -> None:
         await self._write_coil(CL_RESET_ALARM, True)
 
-    async def _set_boost_on(self) -> None:
+    async def turn_on(self) -> None:
+        await self._do_with_connection(self._turn_on)
+
+    async def _turn_on(self) -> None:
+        await self._write_coil(CL_POWER, True)
+
+    async def turn_off(self) -> None:
+        await self._do_with_connection(self._turn_off)
+
+    async def _turn_off(self) -> None:
+        await self._write_coil(CL_POWER, False)
+
+    async def _boost_on(self) -> None:
+        await self._do_with_connection(self._boost_on)
+
+    async def _boost_on(self) -> None:
         await self._write_coil(CL_BoostSWITCH_CTRL, True)
 
-    async def _set_boost_off(self) -> None:
+    async def boost_off(self) -> None:
+        await self._do_with_connection(self._boost_off)
+
+    async def _boost_off(self) -> None:
         await self._write_coil(CL_BoostSWITCH_CTRL, False)
+
+
+    # -----------------------------------------------------------
+    # Functions to connect, get individual information or write changes
+    async def _do_with_connection(self, func: Callable[[], Awaitable[Any]]) -> Any:
+        async with self.lock:  # Device does not support multiple connections
+            if not await self.client.connect():
+                # MaNi additions
+                _LOGGER.error("Failed to open Modbus TCP connection to %s:%s", self.host, self.port)
+                # EO MaNi additions
+                raise ModbusCommunicationException("Failed to open Modbus TCP connection")
+
+            try:
+                return await func()
+            # MaNi additions
+            #except Exception:
+            except Exception as exc:
+                _LOGGER.warning("Modbus operation failed for %s:%s: %s", self.host, self.port, exc)
+                # EO MaNi additions
+                if isinstance(self.device, ClimateDevice):
+                    self.device.available = False
+                raise
+            finally:
+                self.client.close()  # Also, long connections break over time and become unusable
+
+    def _get_registers(self, response: Any, count: int, operation: str) -> List[int]:
+        registers = getattr(self._validate_modbus_response(response, operation), "registers", None)
+        if not isinstance(registers, list) or len(registers) < count:
+            raise ModbusCommunicationException(
+                f"Modbus {operation} failed: expected {count} registers"
+            )
+        return registers
+
+    def _get_bits(self, response: Any, count: int, operation: str) -> List[bool]:
+        bits = getattr(self._validate_modbus_response(response, operation), "bits", None)
+        if not isinstance(bits, list) or len(bits) < count:
+            raise ModbusCommunicationException(
+                f"Modbus {operation} failed: expected {count} coil bits"
+            )
+        return bits
+
+    async def _read_input_registers(self, address: int, count: int) -> List[int]:
+        response = await self.client.read_input_registers(address, count=count)
+        return self._get_registers(response, count, f"read input registers at {address}")
+
+    async def _read_holding_registers(self, address: int, count: int) -> List[int]:
+        response = await self.client.read_holding_registers(address, count=count)
+        return self._get_registers(response, count, f"read holding registers at {address}")
+
+    async def _read_coils(self, address: int, count: int) -> List[bool]:
+        response = await self.client.read_coils(address, count=count)
+        return self._get_bits(response, count, f"read coils at {address}")
+
+    async def _write_register(self, address: int, value: int) -> None:
+        response = await self.client.write_register(address, value)
+        self._validate_modbus_response(response, f"write register {address}")
+
+    async def _write_coil(self, address: int, value: bool) -> None:
+        response = await self.client.write_coil(address, value)
+        self._validate_modbus_response(response, f"write coil {address}")
+
+    @staticmethod
+    def _validate_modbus_response(response: Any, operation: str) -> Any:
+        if response is None:
+            raise ModbusCommunicationException(f"Modbus {operation} failed: empty response")
+
+        is_error = getattr(response, "isError", None)
+        if callable(is_error) and response.isError():
+            raise ModbusCommunicationException(
+                f"Modbus {operation} failed: {response!r}"
+            )
+
+        return response
