@@ -89,8 +89,8 @@ class S21Client:
         # MaNi additions
         is_timer: bool = coils[CL_TIMER]
         is_schedule: bool = coils[CL_WEEK]
-        main_timer_min: int = input_registers[IR_CurTIMER_TIME_MIN]
-        main_timer_hrs: int = input_registers[IR_CurTIMER_TIME_HRS]
+        main_timer_min: int = ( input_registers[IR_CurTIMER_TIME_MIN] >> 8 ) & 0xFF  # High Byte (Low Byte is seconds)
+        main_timer_hrs: int = input_registers[IR_CurTIMER_TIME_HRS] & 0xFF   # Low Byte (padding-safe)
         current_schedule_mode_speed: int = input_registers[IR_CurWeekSpeed]  # 0 - manual
         temp_used_air_incoming_x10: int = _to_signed_16bit(
             input_registers[IR_CurTEMP_ExAirIn]
