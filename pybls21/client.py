@@ -89,7 +89,8 @@ class S21Client:
         # MaNi additions
         is_timer: bool = coils[CL_TIMER]
         is_schedule: bool = coils[CL_WEEK]
-        main_timer_min: int = ( input_registers[IR_CurTIMER_TIME_MIN] >> 8 ) & 0xFF  # High Byte (Low Byte is seconds)
+        main_timer_sec: int = input_registers[IR_CurTIMER_TIME] & 0xFF   # Low Byte is seconds
+        main_timer_min: int = ( input_registers[IR_CurTIMER_TIME] >> 8 ) & 0xFF  # High Byte is minutes
         main_timer_hrs: int = input_registers[IR_CurTIMER_TIME_HRS] & 0xFF   # Low Byte (padding-safe)
         current_schedule_mode_speed: int = input_registers[IR_CurWeekSpeed]  # 0 - manual
         temp_used_air_incoming_x10: int = _to_signed_16bit(
@@ -164,7 +165,7 @@ class S21Client:
             current_outlet_temperature_out=temp_used_air_outgoing_x10 / 10,  # used air ventilation -> outside 
             filter_countdown=filter_countdown,  # whole days until filter replacement
             is_timer=is_timer,
-            timer_countdown = f"{main_timer_hrs:02d}:{main_timer_min:02d}",
+            timer_countdown = f"{main_timer_hrs:02d}:{main_timer_min:02d}:{main_timer_sec:02d}",
             pressure_air_incoming=pressure_air_incoming,
             pressure_air_outgoing=pressure_air_outgoing,
             is_schedule_mode=is_schedule,
