@@ -137,9 +137,11 @@ class S21Client:
                 HVACMode.FAN_ONLY,
             ],
             
-            # MaNi additions
-            ##fan_mode=current_fan_level,  # original considers manual level only and ignores override in scheduled mode
-            fan_mode=current_fan_level if not is_schedule else current_schedule_mode_speed,
+            # MaNi additions - fan level based on scheduled (prioritised) or manual mode
+            ##fan_mode=current_fan_level,  
+            fan_mode=
+                current_fan_level if not is_schedule
+                else (current_schedule_mode_speed or None),
             # EO MaNi additions
             fan_modes=[x + 1 for x in range(max_fan_level)] + [255],
             supported_features=ClimateEntityFeature.TARGET_TEMPERATURE
@@ -201,15 +203,23 @@ class S21Client:
             await self._write_register(HR_OPERATION_MODE, 3)
 
     async def set_fan_mode(self, mode: int) -> None:
-        self._validate_fan_mode(mode)
+        # MaNi additions - use dynamic comparison based on real max level of device (can be < 5)
+        #self._validate_fan_mode(mode)
+        self._validate_fan_mode(mode, self.device.max_fan_level)
+        # EO MaNi additions
         await self._do_with_connection(lambda: self._set_fan_mode(mode))
 
     async def _set_fan_mode(self, mode: int) -> None:
         await self._write_register(HR_SPEED_MODE, mode)
     
     @staticmethod
-    def _validate_fan_mode(mode: int) -> None:
-        if not isinstance(mode, int) or mode not in (1, 2, 3, 4, 5, 255):
+    # MaNi additions - use dynamic comparison based on real max level of device (can be < 5)
+    #def _validate_fan_mode(mode: int) -> None:
+    #    if not isinstance(mode, int) or mode not in (1, 2, 3, 4, 5, 255):
+    def _validate_fan_mode(mode: int, max_fan_level: int) -> None:
+        valid = set(range(1, max_fan_level + 1)) | {255}
+        if not isinstance(mode, int) or mode not in valid:
+    # EO MaNi additions
             raise ValueError("Fan mode must be one of: 1, 2, 3, 4, 5, 255")
 
     async def set_manual_fan_speed_percent(self, speed_percent: int) -> None:
