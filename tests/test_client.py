@@ -122,7 +122,7 @@ class TestClient(unittest.IsolatedAsyncioTestCase):
         self.server.data_bank.set_input_registers(IR_CurFILTER_TIMER, [42])
         self.server.data_bank.set_input_registers(IR_CurSuPRESS, [333])
         self.server.data_bank.set_input_registers(IR_CurExPRESS, [444])
-        self.server.data_bank.set_input_registers(IR_CurTIMER_TIME_MIN, [27])
+        self.server.data_bank.set_input_registers(IR_CurTIMER_TIME_MIN, [27 << 8])
         self.server.data_bank.set_input_registers(IR_CurTIMER_TIME_HRS, [2])
         self.server.data_bank.set_coils(CL_TIMER, [True])
         self.server.data_bank.set_input_registers(IR_CurWeekSpeed, [1])
