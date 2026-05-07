@@ -257,7 +257,11 @@ class S21Client:
             
             # MaNi additions
             ##fan_mode=current_fan_level,  # original considers manual level only and ignores override in scheduled mode
-            fan_mode=current_fan_level if not is_schedule else current_schedule_mode_speed,
+            fan_mode=
+                max_fan_level if is_boosting
+                else max_fan_level if is_timer
+                else current_schedule_mode_speed if is_schedule 
+                else current_fan_level,
             # EO MaNi additions
             fan_modes=[x + 1 for x in range(max_fan_level)] + [255],
             supported_features=ClimateEntityFeature.TARGET_TEMPERATURE
