@@ -33,7 +33,7 @@ IR_CurTEMP_ExAirOut  = 4 # temperature for outgoing air (ventilation->outside)
 IR_CurFILTER_TIMER   = 28 # days until filters needs cleaning (address 27 refers to hours&minutes)
 IR_CurSuPRESS        = 21 # air pressure for ingoing fresh air
 IR_CurExPRESS        = 22 # air pressure for outgoing air
-IR_CurTIMER_TIME_MIN = 25 # countdown of main timer (25 is minutes and seconds)
+IR_CurTIMER_TIME     = 25 # countdown of main timer (25 is minutes and seconds)
 IR_CurTIMER_TIME_HRS = 26 # countdown of main timer (26 is hours)
 IR_CurWeekSpeed      = 32 # speed from current timeframe of schedule mode
 # EO MaNi additions
