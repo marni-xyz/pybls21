@@ -7,12 +7,14 @@ This file defines how coding agents should work in this repository.
 `pybls21` is an async Python client for controlling a Blauberg S21 ventilation/HVAC device over Modbus TCP.
 
 Core capabilities in this project:
-- Poll device state and map Modbus registers/coils to a `ClimateDevice` model.
-- Control power (`turn_on`, `turn_off`).
-- Set HVAC mode (`OFF`, `FAN_ONLY`, `HEAT`, `COOL`, `AUTO`).
-- Set fan mode and manual fan speed.
-- Set target temperature.
-- Reset filter timer.
+- Poll device state and map Modbus registers/coils to a `ClimateDevice` model
+- Control power (`turn_on`, `turn_off`)
+- Set HVAC mode (`OFF`, `FAN_ONLY`, `HEAT`, `COOL`, `AUTO`)
+- Set fan mode and manual fan speed
+- Set timer mode and boost mode
+- Set target temperature
+- Reset alarms
+- Reset filter timer
 
 ## Repository Map
 

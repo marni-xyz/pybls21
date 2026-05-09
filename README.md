@@ -1,6 +1,14 @@
-# Blauberg S21 Asynchronous Python API
+# Blauberg S21 Modbus Python API
 
-**An asynchronous Python API for local control and monitoring of Blauberg S21 devices over Modbus/TCP.**
+[![GitHub Release][releases-shield]][releases]
+[![License][license-shield]](LICENSE)
+
+[![Project Maintenance][maintenance-shield]][user_profile]
+[![BuyMeCoffee][buymecoffeebadge]][buymecoffee]
+
+## Overview
+
+**An asynchronous Python-based API for local control and monitoring of Blauberg S21 devices over Modbus/TCP.**
 
 It is an **extended version** of **[jvitkauskas' development](https://github.com/jvitkauskas/pybls21)**. Many thanks for laying the foundation!
 
@@ -39,8 +47,31 @@ Available methods to change B21 settings:
 
 ## Testing
 
-To test connectivity and general output from your Blauberg S21 device, run:
+To check connectivity with and general output from your Blauberg S21 device, run:
 
 ```bash
 python demo.py --host 192.168.0.125 --port 502
 ```
+
+Run all tests:
+```bash
+python -m unittest -v
+```
+
+Run one test module:
+
+```bash
+python -m unittest -v tests.test_client
+```
+
+---
+
+[buymecoffee]: https://www.buymeacoffee.com/marnixyz
+[buymecoffeebadge]: https://img.shields.io/badge/buy%20me%20a%20coffee-donate-yellow.svg?style=for-the-badge
+[commits-shield]: https://img.shields.io/github/commit-activity/y/marni-xyz/pybls21.svg?style=for-the-badge
+[commits]: https://github.com/marni-xyz/pybls21/commits/main
+[license-shield]: https://img.shields.io/github/license/marni-xyz/homeassistant_blauberg_s21.svg?style=for-the-badge
+[maintenance-shield]: https://img.shields.io/badge/maintainer-%40marni-xyz.svg?style=for-the-badge
+[releases-shield]: https://img.shields.io/github/v/release/marni-xyz/pybls21.svg?style=for-the-badge
+[releases]: https://github.com/marni-xyz/pybls21/releases
+[user_profile]: https://github.com/marni-xyz
