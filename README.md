@@ -53,16 +53,15 @@ To check connectivity with and general output from your Blauberg S21 device, run
 python demo.py --host 192.168.0.125 --port 502
 ```
 
-Run all tests:
-```bash
-python -m unittest -v
-```
+## Report issues
 
-Run one test module:
+If you have any issues with this integration, please [open an issue](../../issues).
 
-```bash
-python -m unittest -v tests.test_client
-```
+
+## Contributions are welcome!
+
+If you want to contribute to this please read the [Contribution guidelines](CONTRIBUTING.md)
+
 
 ---
 
