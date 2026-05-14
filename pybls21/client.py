@@ -191,25 +191,26 @@ class S21Client:
 
     async def _set_hvac_mode(self, hvac_mode: HVACMode) -> None:
         if hvac_mode == HVACMode.OFF:
-            await self._turn_off()
+            await self._set_turn_off()
         elif hvac_mode == HVACMode.FAN_ONLY:
-            await self._turn_on()
+            await self._set_turn_on()
             await self._write_register(HR_OPERATION_MODE, 0)
         elif hvac_mode == HVACMode.HEAT:
-            await self._turn_on()
+            await self._set_turn_on()
             await self._write_register(HR_OPERATION_MODE, 1)
         elif hvac_mode == HVACMode.COOL:
-            await self._turn_on()
+            await self._set_turn_on()
             await self._write_register(HR_OPERATION_MODE, 2)
         else:
-            await self._turn_on()
+            await self._set_turn_on()
             await self._write_register(HR_OPERATION_MODE, 3)
 
-    async def set_fan_mode(self, mode: int) -> None:
-        # MaNi additions - use dynamic comparison based on real max level of device (can be < 5)
-        #self._validate_fan_mode(mode)
-        self._validate_fan_mode(mode, self.device.max_fan_level)
-        # EO MaNi additions
+    # MaNi additions - use dynamic comparison based on real max level of device (can be < 5)
+    #async def set_fan_mode(self, mode: int) -> None:
+    #    self._validate_fan_mode(mode)
+    async def set_fan_mode(self, mode: int, max_fan_level: int) -> None:
+        self._validate_fan_mode(mode, max_fan_level)
+    # EO MaNi additions
         await self._do_with_connection(lambda: self._set_fan_mode(mode))
 
     async def _set_fan_mode(self, mode: int) -> None:
@@ -220,10 +221,10 @@ class S21Client:
     #def _validate_fan_mode(mode: int) -> None:
     #    if not isinstance(mode, int) or mode not in (1, 2, 3, 4, 5, 255):
     def _validate_fan_mode(mode: int, max_fan_level: int) -> None:
-        valid = set(range(1, max_fan_level + 1)) | {255}
+        valid = set(range(1, max_fan_level)) | {255}
         if not isinstance(mode, int) or mode not in valid:
     # EO MaNi additions
-            raise ValueError("Fan mode must be one of: 1, 2, 3, 4, 5, 255")
+            raise ValueError("Fan mode must be one of: 1 to ", max_fan_level, " or 255")
 
     async def set_manual_fan_speed_percent(self, speed_percent: int) -> None:
         self._validate_manual_fan_speed_percent(speed_percent)

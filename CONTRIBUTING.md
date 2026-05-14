@@ -49,9 +49,20 @@ to make sure the code follows the style.
 
 ## Test your code modification
 
-You should verify that existing [tests](./tests) are still working
-and you are encouraged to add new ones.
+You should verify that existing [tests](./tests) are still working and you are encouraged to add new ones.
+
 You can run the tests using the following commands from the root folder:
+
+Run all tests:
+```bash
+python -m unittest -v
+```
+
+Run one test module:
+
+```bash
+python -m unittest -v tests.test_client
+```
 
 If any of the tests fail, make the necessary changes to the tests as part of
 your changes to the integration.
