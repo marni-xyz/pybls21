@@ -104,7 +104,7 @@ class TestClient(unittest.IsolatedAsyncioTestCase):
         self.server.data_bank.set_coils(CL_POWER, [True])
         self.server.data_bank.set_coils(CL_Boost_MODE, [False])
         self.server.data_bank.set_holding_registers(HR_SetTEMP, [15])
-        self.server.data_bank.set_holding_registers(HR_MaxSPEED_MODE, [3])
+        self.server.data_bank.set_holding_registers(HR_MaxSPEED_MODE, [4])
         self.server.data_bank.set_holding_registers(HR_SPEED_MODE, [2])
         self.server.data_bank.set_holding_registers(HR_OPERATION_MODE, [0])
         self.server.data_bank.set_holding_registers(HR_ManualSPEED, [100])
@@ -114,17 +114,17 @@ class TestClient(unittest.IsolatedAsyncioTestCase):
         self.server.data_bank.set_input_registers(IR_StateFILTER, [3])
         self.server.data_bank.set_input_registers(IR_ALARM, [2])
         self.server.data_bank.set_input_registers(IR_CurTEMP_SuAirIn, [108])
-        self.server.data_bank.set_input_registers(IR_CurTEMP_SuAirOut, [192])
+        self.server.data_bank.set_input_registers(IR_CurTEMP_SuAirOut, [123])
 
         # MaNi additions
-        self.server.data_bank.set_input_registers(IR_CurTEMP_ExAirIn, [207])
-        self.server.data_bank.set_input_registers(IR_CurTEMP_ExAirOut, [181])
+        self.server.data_bank.set_input_registers(IR_CurTEMP_ExAirIn, [135])
+        self.server.data_bank.set_input_registers(IR_CurTEMP_ExAirOut, [109])
         self.server.data_bank.set_input_registers(IR_CurFILTER_TIMER, [42])
         self.server.data_bank.set_input_registers(IR_CurSuPRESS, [333])
         self.server.data_bank.set_input_registers(IR_CurExPRESS, [444])
-        self.server.data_bank.set_input_registers(IR_CurTIMER_TIME_MIN, [27 << 8])
+        self.server.data_bank.set_input_registers(IR_CurTIMER_TIME, [27 << 8])
         self.server.data_bank.set_input_registers(IR_CurTIMER_TIME_HRS, [2])
-        self.server.data_bank.set_coils(CL_TIMER, [True])
+        self.server.data_bank.set_coils(CL_TIMER, [False])
         self.server.data_bank.set_input_registers(IR_CurWeekSpeed, [1])
         self.server.data_bank.set_coils(CL_WEEK, [True])
         # EO MaNi additions
@@ -144,7 +144,7 @@ class TestClient(unittest.IsolatedAsyncioTestCase):
                 unique_id=f"S21_{self.server.host}_{self.server.port}",
                 temperature_unit="°C",
                 precision=1,
-                current_temperature=19.2,
+                current_temperature=12.3,
                 target_temperature=15,
                 target_temperature_step=1,
                 min_temp=15,
@@ -159,8 +159,8 @@ class TestClient(unittest.IsolatedAsyncioTestCase):
                     HVACMode.AUTO,
                     HVACMode.FAN_ONLY,
                 ],
-                fan_mode=2,
-                fan_modes=[1, 2, 3, 255],
+                fan_mode=1,
+                fan_modes=[1, 2, 3, 4, 255],
                 supported_features=ClimateEntityFeature.TARGET_TEMPERATURE
                 | ClimateEntityFeature.FAN_MODE,
                 manufacturer="Blauberg",
@@ -169,7 +169,7 @@ class TestClient(unittest.IsolatedAsyncioTestCase):
                 is_boosting=False,
                 current_intake_temperature=10.8,
                 manual_fan_speed_percent=100,
-                max_fan_level=3,
+                max_fan_level=4,
                 filter_state=3,
                 alarm_state=2,
                 supply_fan_speed=10,
@@ -180,8 +180,8 @@ class TestClient(unittest.IsolatedAsyncioTestCase):
                 current_outlet_temperature_in=13.5,
                 current_outlet_temperature_out=10.9,
                 filter_countdown=42,
-                is_timer=True,
-                timer_countdown = "02:27",
+                is_timer=False,
+                timer_countdown = "02:27:00",
                 pressure_air_incoming=333,
                 pressure_air_outgoing=444,
                 is_schedule_mode=True,
@@ -429,7 +429,7 @@ class TestClient(unittest.IsolatedAsyncioTestCase):
         self.server.data_bank.set_holding_registers(HR_SPEED_MODE, [1])
 
         client = S21Client(host=self.server.host, port=self.server.port)
-        await client.set_fan_mode(2)
+        await client.set_fan_mode(2, 3)
         device = await client.poll()
 
         self.assertEqual(device.fan_mode, 2)
@@ -438,7 +438,7 @@ class TestClient(unittest.IsolatedAsyncioTestCase):
         self.server.data_bank.set_holding_registers(HR_SPEED_MODE, [1])
 
         client = S21Client(host=self.server.host, port=self.server.port)
-        await client.set_fan_mode(255)
+        await client.set_fan_mode(255, 3)
         device = await client.poll()
 
         self.assertEqual(device.fan_mode, 255)
@@ -450,7 +450,7 @@ class TestClient(unittest.IsolatedAsyncioTestCase):
         for invalid_mode in (0, 6, 254):
             with self.subTest(mode=invalid_mode):
                 with self.assertRaises(ValueError):
-                    await client.set_fan_mode(invalid_mode)
+                    await client.set_fan_mode(invalid_mode, 3)
 
         client.client.connect.assert_not_called()
 
