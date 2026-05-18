@@ -42,10 +42,12 @@ Report a bug by [opening a new issue](../../issues/new/choose); it's that easy!
 
 People _love_ thorough bug reports. I'm not even kidding.
 
+
 ## Use a Consistent Coding Style
 
 Use [black](https://github.com/ambv/black) and [prettier](https://prettier.io/)
 to make sure the code follows the style.
+
 
 ## Test your code modification
 
@@ -58,14 +60,14 @@ Run all tests:
 python -m unittest -v
 ```
 
-Run one test module:
-
+Run one test module (e.g. timer):
 ```bash
-python -m unittest -v tests.test_client
+python -m unittest -v tests.test_client.TestClient.test_set_timer_off
 ```
 
 If any of the tests fail, make the necessary changes to the tests as part of
 your changes to the integration.
+
 
 ## License
 

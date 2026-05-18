@@ -536,6 +536,22 @@ class TestClient(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(self.server.data_bank.get_coils(CL_TIMER, 1), [False])
 
+    async def test_set_scheduler_mode_on(self):
+        self.server.data_bank.set_coils(CL_WEEK, [False])
+
+        client = S21Client(host=self.server.host, port=self.server.port)
+        await client.set_scheduler_mode_on()
+
+        self.assertEqual(self.server.data_bank.get_coils(CL_WEEK, 1), [True])
+
+    async def test_set_scheduler_mode_off(self):
+        self.server.data_bank.set_coils(CL_WEEK, [True])
+
+        client = S21Client(host=self.server.host, port=self.server.port)
+        await client.set_scheduler_mode_off()
+
+        self.assertEqual(self.server.data_bank.get_coils(CL_WEEK, 1), [False])
+
 
 class TestDataBank(DataBank):
     __test__ = False
