@@ -300,6 +300,18 @@ class S21Client:
     async def _set_timer_off(self) -> None:
         await self._write_coil(CL_TIMER, False)
 
+    async def set_scheduler_mode_on(self) -> None:
+        await self._do_with_connection(self._set_scheduler_mode_on)
+
+    async def _set_scheduler_mode_on(self) -> None:
+        await self._write_coil(CL_WEEK, True)
+    
+    async def set_scheduler_mode_off(self) -> None:
+        await self._do_with_connection(self._set_scheduler_mode_off)
+
+    async def _set_scheduler_mode_off(self) -> None:
+        await self._write_coil(CL_WEEK, False)
+
 
     # -----------------------------------------------------------
     # Functions to connect, get individual information or write changes
