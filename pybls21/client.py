@@ -79,10 +79,10 @@ class S21Client:
 
         max_fan_level: int = holding_registers[HR_MaxSPEED_MODE]
         current_fan_level: int = holding_registers[HR_SPEED_MODE]  # 255 - manual
-        temp_before_heating_x10: int = _to_signed_16bit(
+        temp_air_before_heating_x10: int = _to_signed_16bit(
             input_registers[IR_CurTEMP_SuAirIn]
         )
-        temp_after_heating_x10: int = _to_signed_16bit(
+        temp_air_after_heating_x10: int = _to_signed_16bit(
             input_registers[IR_CurTEMP_SuAirOut]
         )
         supply_fan_speed: int = input_registers[IR_SuRPM]
@@ -95,9 +95,9 @@ class S21Client:
 
         # MaNi additions
         is_timer: bool = coils[CL_TIMER]
-        main_timer_sec: int = input_registers[IR_CurTIMER_TIME] & 0xFF   # Low Byte is seconds
+        main_timer_sec: int = input_registers[IR_CurTIMER_TIME] & 0xFF           # Low Byte is seconds
         main_timer_min: int = ( input_registers[IR_CurTIMER_TIME] >> 8 ) & 0xFF  # High Byte is minutes
-        main_timer_hrs: int = input_registers[IR_CurTIMER_TIME_HRS] & 0xFF   # Low Byte (padding-safe)
+        main_timer_hrs: int = input_registers[IR_CurTIMER_TIME_HRS] & 0xFF       # Low Byte (padding-safe)
         
         is_schedule: bool = coils[CL_WEEK]
         current_schedule_mode_speed: int = input_registers[IR_CurWeekSpeed]  # 0 - manual
@@ -105,15 +105,17 @@ class S21Client:
         bypass_type: int = holding_registers[HR_BYPASS_ROTOR_TYPE]
         bypass_mode: int = holding_registers[HR_BYPASS_ROTOR_MODE]
         
-        temp_used_air_incoming_x10: int = _to_signed_16bit(
+        temp_air_extract_x10: int = _to_signed_16bit(
             input_registers[IR_CurTEMP_ExAirIn]
         )
-        temp_used_air_outgoing_x10: int = _to_signed_16bit(
+        temp_air_exhaust_x10: int = _to_signed_16bit(
             input_registers[IR_CurTEMP_ExAirOut]
         )
-        filter_countdown: int = input_registers[IR_CurFILTER_TIMER]
-        pressure_air_incoming: int = input_registers[IR_CurSuPRESS]
-        pressure_air_outgoing: int = input_registers[IR_CurExPRESS]
+        filter_countdown_days: int = input_registers[IR_CurFILTER_TIMER_DAYS]
+        filter_countdown_hrs: int = ( input_registers[IR_CurFILTER_TIMER_HRS_MIN] >> 8 ) & 0xFF  # High Byte is hours
+        filter_countdown_min: int = input_registers[IR_CurFILTER_TIMER_HRS_MIN] & 0xFF           # Low Byte (padding-safe) is minutes
+        supply_pressure: int = input_registers[IR_CurSuPRESS]
+        extract_pressure: int = input_registers[IR_CurExPRESS]
         # EO MaNi additions
         
         self.device = ClimateDevice(
@@ -122,7 +124,7 @@ class S21Client:
             unique_id=f"S21_{self.host}_{self.port}",
             temperature_unit=TEMP_CELSIUS,  # Seems like no Fahrenheit option is available
             precision=1,
-            current_temperature=temp_after_heating_x10 / 10,
+            current_temperature=temp_air_after_heating_x10 / 10,
             target_temperature=set_temperature,
             target_temperature_step=1,
             min_temp=15,
@@ -139,8 +141,8 @@ class S21Client:
                 else HVACAction.FAN if operation_mode == 0
                 else HVACAction.HEATING if operation_mode == 1
                 else HVACAction.COOLING if operation_mode == 2
-                else HVACAction.HEATING if temp_before_heating_x10 < temp_after_heating_x10
-                else HVACAction.COOLING if temp_before_heating_x10 > temp_after_heating_x10
+                else HVACAction.HEATING if temp_air_before_heating_x10 < temp_air_after_heating_x10
+                else HVACAction.COOLING if temp_air_before_heating_x10 > temp_air_after_heating_x10
                 else HVACAction.IDLE,
             hvac_modes=[
                 HVACMode.OFF,
@@ -165,7 +167,7 @@ class S21Client:
             model="S21",
             sw_version=_parse_firmware_version(firmware_info),
             is_boosting=is_boosting,
-            current_intake_temperature=temp_before_heating_x10 / 10,
+            current_intake_temperature=temp_air_before_heating_x10 / 10,
             manual_fan_speed_percent=manual_fan_speed_percent,
             max_fan_level=max_fan_level,
             filter_state=filter_state,
@@ -175,10 +177,12 @@ class S21Client:
 
             # MaNi additions
             alarm_codes=alarm_codes,
-            current_intake_temperature_out=temp_after_heating_x10 / 10,  # fresh air ventilation -> rooms
-            current_outlet_temperature_in=temp_used_air_incoming_x10 / 10,   # used air rooms -> ventilation
-            current_outlet_temperature_out=temp_used_air_outgoing_x10 / 10,  # used air ventilation -> outside 
-            filter_countdown=filter_countdown,  # whole days until filter replacement
+            current_ingoing_temperature=temp_air_after_heating_x10 / 10,  # fresh air from ventilation unit to rooms
+            current_extract_temperature=temp_air_extract_x10 / 10,        # used air from rooms to ventilation unit
+            current_exhaust_temperature=temp_air_exhaust_x10 / 10,        # used air from ventilation unit to outside 
+            filter_countdown_days=filter_countdown_days,  # whole days until filter replacement
+            filter_countdown_hrs=filter_countdown_hrs,    # whole hours until filter replacement
+            filter_countdown_min=filter_countdown_min,    # whole minutes until filter replacement
             is_timer=is_timer,
             timer_countdown = f"{main_timer_hrs:02d}:{main_timer_min:02d}:{main_timer_sec:02d}",
             is_schedule_mode=is_schedule,
@@ -186,8 +190,8 @@ class S21Client:
             fan_level_manual_mode=current_fan_level,
             bypass_type=bypass_type,
             bypass_mode=bypass_mode,
-            pressure_air_incoming=pressure_air_incoming,
-            pressure_air_outgoing=pressure_air_outgoing,
+            supply_pressure=supply_pressure,
+            extract_pressure=extract_pressure,
             # EO MaNi additions
         )
         

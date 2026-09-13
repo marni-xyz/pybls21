@@ -59,12 +59,12 @@ class ClimateDevice:
     extract_fan_speed:          int
 
     # MaNi additions
-    current_intake_temperature_out: float
-    current_outlet_temperature_in:  float
-    current_outlet_temperature_out: float
-    is_timer:                       bool
-    is_schedule_mode:               bool
-    alarm_codes:                    list[int] = field(default_factory=list)
+    current_ingoing_temperature: float
+    current_extract_temperature: float
+    current_exhaust_temperature: float
+    is_timer:                    bool
+    is_schedule_mode:            bool
+    alarm_codes:                 list[int] = field(default_factory=list)
     # EO MaNi additions
 
     current_humidity: Optional[float] = None
@@ -74,10 +74,12 @@ class ClimateDevice:
     sw_version:       Optional[str] = None
 
     # MaNi additions
-    filter_countdown:        Optional[int] = None
+    filter_countdown_days:   Optional[int] = None
+    filter_countdown_hrs:    Optional[int] = None
+    filter_countdown_min:    Optional[int] = None
     timer_countdown:         Optional[str] = None
-    pressure_air_incoming:   Optional[int] = None
-    pressure_air_outgoing:   Optional[int] = None
+    supply_pressure:         Optional[int] = None
+    extract_pressure:        Optional[int] = None
     fan_level_schedule_mode: Optional[int] = None
     fan_level_manual_mode:   Optional[int] = None
     bypass_type:             Optional[int] = None

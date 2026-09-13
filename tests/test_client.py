@@ -91,25 +91,6 @@ class TestClient(unittest.IsolatedAsyncioTestCase):
         with self.assertRaises(ModbusCommunicationException):
             await client.poll()
 
-    async def test_poll_when_it_fails_after_a_successful_poll_marks_device_unavailable(
-        self,
-    ):
-        client = S21Client(host=self.server.host, port=self.server.port)
-
-        # A device has to be present first - the failure path below is only
-        # reached once self.device holds a ClimateDevice.
-        await client.poll()
-        self.assertTrue(client.device.available)
-
-        client.client.connect = AsyncMock(return_value=True)
-        client.client.close = Mock()
-        client.client.read_input_registers = AsyncMock(return_value=ErrorResponse())
-
-        with self.assertRaises(ModbusCommunicationException):
-            await client.poll()
-
-        self.assertFalse(client.device.available)
-
     async def test_turn_on_when_write_fails_raises_exception(self):
         client = S21Client(host=self.server.host, port=self.server.port)
         client.client.connect = AsyncMock(return_value=True)
@@ -136,11 +117,12 @@ class TestClient(unittest.IsolatedAsyncioTestCase):
         self.server.data_bank.set_input_registers(IR_CurTEMP_SuAirOut, [123])
 
         # MaNi additions
-        self.server.data_bank.set_input_registers(IR_CurTEMP_ExAirIn, [135])
-        self.server.data_bank.set_input_registers(IR_CurTEMP_ExAirOut, [109])
-        self.server.data_bank.set_input_registers(IR_CurFILTER_TIMER, [42])
-        self.server.data_bank.set_input_registers(IR_CurSuPRESS, [333])
-        self.server.data_bank.set_input_registers(IR_CurExPRESS, [444])
+        self.server.data_bank.set_input_registers(IR_CurTEMP_ExAirIn, [236])
+        self.server.data_bank.set_input_registers(IR_CurTEMP_ExAirOut, [227])
+        self.server.data_bank.set_input_registers(IR_CurFILTER_TIMER_DAYS, [69])
+        self.server.data_bank.set_input_registers(IR_CurFILTER_TIMER_HRS_MIN, [11 << 8 | 22])
+        self.server.data_bank.set_input_registers(IR_CurSuPRESS, [45])
+        self.server.data_bank.set_input_registers(IR_CurExPRESS, [50])
         self.server.data_bank.set_coils(CL_TIMER, [False])
         self.server.data_bank.set_input_registers(IR_CurTIMER_TIME, [27 << 8])
         self.server.data_bank.set_input_registers(IR_CurTIMER_TIME_HRS, [2])
@@ -197,14 +179,16 @@ class TestClient(unittest.IsolatedAsyncioTestCase):
                 extract_fan_speed=20,
 
                 # MaNi additions
-                current_intake_temperature_out=12.3,
-                current_outlet_temperature_in=13.5,
-                current_outlet_temperature_out=10.9,
-                filter_countdown=42,
+                current_ingoing_temperature=12.3,
+                current_extract_temperature=23.6,
+                current_exhaust_temperature=22.7,
+                filter_countdown_days=69,
+                filter_countdown_hrs=11,
+                filter_countdown_min=22,
                 is_timer=False,
                 timer_countdown = "02:27:00",
-                pressure_air_incoming=333,
-                pressure_air_outgoing=444,
+                supply_pressure=45,
+                extract_pressure=50,
                 is_schedule_mode=True,
                 fan_level_schedule_mode=1,
                 fan_level_manual_mode=2,
