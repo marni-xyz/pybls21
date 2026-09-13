@@ -15,6 +15,8 @@ from .exceptions import (
 )
 from .models import (
     TEMP_CELSIUS,
+    BypassMode,
+    BypassType,
     ClimateDevice,
     ClimateEntityFeature,
     HVACAction,
@@ -61,8 +63,8 @@ class S21Client:
             raise UnsupportedDeviceException("Unsupported device (IR_DeviceTYPE != 1)")
 
         coils = await self._read_coils(0, count=4)
-        holding_registers = await self._read_holding_registers(0, count=75)
-        input_registers = await self._read_input_registers(0, count=39)
+        holding_registers = await self._read_holding_registers(0, count=76)
+        input_registers = await self._read_input_registers(0, count=52)
 
         is_on: bool = coils[CL_POWER]
         is_boosting: bool = coils[CL_Boost_MODE]
@@ -102,9 +104,11 @@ class S21Client:
         is_schedule: bool = coils[CL_WEEK]
         current_schedule_mode_speed: int = input_registers[IR_CurWeekSpeed]  # 0 - manual
         
-        bypass_type: int = holding_registers[HR_BYPASS_ROTOR_TYPE]
-        bypass_mode: int = holding_registers[HR_BYPASS_ROTOR_MODE]
-        
+        bypass_type: BypassType = BypassType(holding_registers[HR_BYPASS_ROTOR_TYPE])
+        bypass_mode: BypassMode = BypassMode(holding_registers[HR_BYPASS_ROTOR_MODE])
+        bypass_position_manual: int = holding_registers[HR_BYPASS_ROTOR_SET_MANUAL]
+        bypass_position: int = input_registers[IR_BYPASS_ROTOR_STATUS]
+
         temp_air_extract_x10: int = _to_signed_16bit(
             input_registers[IR_CurTEMP_ExAirIn]
         )
@@ -190,6 +194,8 @@ class S21Client:
             fan_level_manual_mode=current_fan_level,
             bypass_type=bypass_type,
             bypass_mode=bypass_mode,
+            bypass_position=bypass_position,
+            bypass_position_manual=bypass_position_manual,
             supply_pressure=supply_pressure,
             extract_pressure=extract_pressure,
             # EO MaNi additions
@@ -331,17 +337,32 @@ class S21Client:
     async def _set_scheduler_mode_off(self) -> None:
         await self._write_coil(CL_WEEK, False)
 
-    async def set_bypass_mode(self, mode: int) -> None:
+    async def set_bypass_mode(self, mode: BypassMode) -> None:
         self._validate_bypass_mode(mode)
+        mode = BypassMode(mode)
         await self._do_with_connection(lambda: self._set_bypass_mode(mode))
 
     async def _set_bypass_mode(self, mode: int) -> None:
         await self._write_register(HR_BYPASS_ROTOR_MODE, mode)
 
     @staticmethod
-    def _validate_bypass_mode(mode: int) -> None:
-        if not isinstance(mode, int) or mode not in (0, 1, 2):
-            raise ValueError(f"Bypass mode must be 0 (close/start), 1 (open/stop), or 2 (auto); got: {mode}")
+    def _validate_bypass_mode(mode: BypassMode) -> None:
+        if mode not in BypassMode:
+            raise ValueError(f"Bypass mode must be 0 (closed/start), 1 (open/stop), or 2 (auto); got: {mode}")
+
+    async def set_bypass_position(self, position_percent: int) -> None:
+        self._validate_bypass_position(position_percent)
+        await self._do_with_connection(
+            lambda: self._set_bypass_position(position_percent)
+        )
+
+    async def _set_bypass_position(self, position_percent: int) -> None:
+        await self._write_register(HR_BYPASS_ROTOR_SET_MANUAL, position_percent)
+    
+    @staticmethod
+    def _validate_bypass_position(position_percent: int) -> None:
+        if not isinstance(position_percent, int) or not 0 <= position_percent <= 100:
+            raise ValueError("Bypass position percent must be between 0 and 100")
 
     async def _read_alarm_codes(self) -> list[int]:
         """Read active alarm codes from Discrete Inputs 19-71."""

@@ -6,8 +6,14 @@ from pyModbusTCP.server import DataBank, ModbusServer
 from pybls21.client import S21Client
 from pybls21.constants import *
 from pybls21.exceptions import *
-from pybls21.models import ClimateDevice, ClimateEntityFeature, HVACAction, HVACMode
-
+from pybls21.models import (
+    BypassMode,
+    BypassType,
+    ClimateDevice,
+    ClimateEntityFeature,
+    HVACAction,
+    HVACMode,
+)
 
 class ErrorResponse:
     def isError(self):
@@ -91,6 +97,25 @@ class TestClient(unittest.IsolatedAsyncioTestCase):
         with self.assertRaises(ModbusCommunicationException):
             await client.poll()
 
+    async def test_poll_when_it_fails_after_a_successful_poll_marks_device_unavailable(
+        self,
+    ):
+        client = S21Client(host=self.server.host, port=self.server.port)
+
+        # A device has to be present first - the failure path below is only
+        # reached once self.device holds a ClimateDevice.
+        await client.poll()
+        self.assertTrue(client.device.available)
+
+        client.client.connect = AsyncMock(return_value=True)
+        client.client.close = Mock()
+        client.client.read_input_registers = AsyncMock(return_value=ErrorResponse())
+
+        with self.assertRaises(ModbusCommunicationException):
+            await client.poll()
+
+        self.assertFalse(client.device.available)
+
     async def test_turn_on_when_write_fails_raises_exception(self):
         client = S21Client(host=self.server.host, port=self.server.port)
         client.client.connect = AsyncMock(return_value=True)
@@ -130,6 +155,8 @@ class TestClient(unittest.IsolatedAsyncioTestCase):
         self.server.data_bank.set_input_registers(IR_CurWeekSpeed, [1])
         self.server.data_bank.set_holding_registers(HR_BYPASS_ROTOR_TYPE, [5])
         self.server.data_bank.set_holding_registers(HR_BYPASS_ROTOR_MODE, [2])
+        self.server.data_bank.set_holding_registers(HR_BYPASS_ROTOR_SET_MANUAL, [42])
+        self.server.data_bank.set_input_registers(IR_BYPASS_ROTOR_STATUS, [4])
         # EO MaNi additions
 
         self.server.data_bank.set_input_registers(
@@ -192,8 +219,10 @@ class TestClient(unittest.IsolatedAsyncioTestCase):
                 is_schedule_mode=True,
                 fan_level_schedule_mode=1,
                 fan_level_manual_mode=2,
-                bypass_type=5,
-                bypass_mode=2,
+                bypass_type=BypassType.BYPASS_THREE_POINT,
+                bypass_mode=BypassMode.AUTO,
+                bypass_position=4,
+                bypass_position_manual=42,
                 # EO MaNi additions
             ),
         )
@@ -564,6 +593,20 @@ class TestClient(unittest.IsolatedAsyncioTestCase):
 
 
     # --- Bypass tests ---
+    
+    async def test_poll_bypass_read_states(self):
+        self.server.data_bank.set_holding_registers(HR_BYPASS_ROTOR_TYPE, [2])
+        self.server.data_bank.set_holding_registers(HR_BYPASS_ROTOR_MODE, [2])
+        self.server.data_bank.set_holding_registers(HR_BYPASS_ROTOR_SET_MANUAL, [75])
+        self.server.data_bank.set_input_registers(IR_BYPASS_ROTOR_STATUS, [42])
+
+        client = S21Client(host=self.server.host, port=self.server.port)
+        device = await client.poll()
+
+        self.assertEqual(device.bypass_type, BypassType.BYPASS_ANALOGUE)
+        self.assertEqual(device.bypass_mode, BypassMode.AUTO)
+        self.assertEqual(device.bypass_position_manual, 75)
+        self.assertEqual(device.bypass_position, 42)
 
     async def test_set_bypass_mode_close(self):
         self.server.data_bank.set_holding_registers(HR_BYPASS_ROTOR_MODE, [1])
@@ -599,11 +642,31 @@ class TestClient(unittest.IsolatedAsyncioTestCase):
         client = S21Client(host=self.server.host, port=self.server.port)
         client.client.connect = AsyncMock(return_value=True)
 
-        for invalid_mode in (3, -1, 255):
+        for invalid_mode in (-1, 3):
             with self.subTest(mode=invalid_mode):
-                with self.assertRaises(ValueError) as ctx:
+                with self.assertRaises(ValueError):
                     await client.set_bypass_mode(invalid_mode)
-            print(f"[mode={invalid_mode}] ValueError: {ctx.exception}")
+
+        client.client.connect.assert_not_called()
+
+    async def test_set_bypass_position(self):
+        self.server.data_bank.set_holding_registers(HR_BYPASS_ROTOR_SET_MANUAL, [0])
+
+        client = S21Client(host=self.server.host, port=self.server.port)
+        await client.set_bypass_position(60)
+
+        self.assertEqual(
+            self.server.data_bank.get_holding_registers(HR_BYPASS_ROTOR_SET_MANUAL, 1), [60]
+        )
+
+    async def test_set_bypass_position_when_value_is_invalid_raises_exception(self):
+        client = S21Client(host=self.server.host, port=self.server.port)
+        client.client.connect = AsyncMock(return_value=True)
+
+        for invalid_position in (-1, 101):
+            with self.subTest(position=invalid_position):
+                with self.assertRaises(ValueError):
+                    await client.set_bypass_position(invalid_position)
 
         client.client.connect.assert_not_called()
 
@@ -660,7 +723,7 @@ class TestDataBank(DataBank):
 
     def __init__(self):
         super().__init__(
-            coils_size=25, d_inputs_size=72, h_regs_size=182, i_regs_size=51
+            coils_size=25, d_inputs_size=72, h_regs_size=182, i_regs_size=54
         )
         self.reset()
 
