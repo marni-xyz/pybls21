@@ -73,7 +73,7 @@ class ClimateDevice:
     extract_fan_speed:          int
 
     # MaNi additions
-    current_ingoing_temperature: float
+    current_supply_temperature:  float
     current_extract_temperature: float
     current_exhaust_temperature: float
     is_timer:                    bool

@@ -181,9 +181,9 @@ class S21Client:
 
             # MaNi additions
             alarm_codes=alarm_codes,
-            current_ingoing_temperature=temp_air_after_heating_x10 / 10,  # fresh air from ventilation unit to rooms
-            current_extract_temperature=temp_air_extract_x10 / 10,        # used air from rooms to ventilation unit
-            current_exhaust_temperature=temp_air_exhaust_x10 / 10,        # used air from ventilation unit to outside 
+            current_supply_temperature=temp_air_after_heating_x10 / 10,  # fresh air from ventilation unit into rooms
+            current_extract_temperature=temp_air_extract_x10 / 10,       # used air from rooms into ventilation unit
+            current_exhaust_temperature=temp_air_exhaust_x10 / 10,       # used air from ventilation unit to outside 
             filter_countdown_days=filter_countdown_days,  # whole days until filter replacement
             filter_countdown_hrs=filter_countdown_hrs,    # whole hours until filter replacement
             filter_countdown_min=filter_countdown_min,    # whole minutes until filter replacement

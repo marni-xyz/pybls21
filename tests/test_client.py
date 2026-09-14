@@ -206,7 +206,7 @@ class TestClient(unittest.IsolatedAsyncioTestCase):
                 extract_fan_speed=20,
 
                 # MaNi additions
-                current_ingoing_temperature=12.3,
+                current_supply_temperature=12.3,
                 current_extract_temperature=23.6,
                 current_exhaust_temperature=22.7,
                 filter_countdown_days=69,
