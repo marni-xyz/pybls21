@@ -41,6 +41,16 @@ def _to_signed_16bit(value: int) -> int:
     return value - 0x10000 if value > 0x7FFF else value
 
 
+# birdie1 additions
+def _parse_min_hours_days_to_min(datetime_info: List[int]) -> int:
+    hours, minutes = datetime_info[0].to_bytes(2, "big")
+    days: int = datetime_info[1]
+    total_minutes = days * 1440 + hours * 60 + minutes
+
+    return total_minutes
+# EO birdie1 additions
+
+
 class S21Client:
     def __init__(self, host: str, port: int = 502):
         self.host = host
@@ -64,7 +74,7 @@ class S21Client:
 
         coils = await self._read_coils(0, count=4)
         holding_registers = await self._read_holding_registers(0, count=76)
-        input_registers = await self._read_input_registers(0, count=52)
+        input_registers = await self._read_input_registers(0, count=54)
 
         is_on: bool = coils[CL_POWER]
         is_boosting: bool = coils[CL_Boost_MODE]
@@ -87,8 +97,8 @@ class S21Client:
         temp_air_after_heating_x10: int = _to_signed_16bit(
             input_registers[IR_CurTEMP_SuAirOut]
         )
-        supply_fan_speed: int = input_registers[IR_SuRPM]
-        extract_fan_speed: int = input_registers[IR_ExRPM]
+        supply_fan_rpm: int = input_registers[IR_SuRPM]
+        extract_fan_rpm: int = input_registers[IR_ExRPM]
         firmware_info: List[int] = input_registers[
             IR_VerMAIN_FMW_start : IR_VerMAIN_FMW_end + 1
         ]
@@ -122,6 +132,16 @@ class S21Client:
         extract_pressure: int = input_registers[IR_CurExPRESS]
         # EO MaNi additions
         
+        # birdie1 additions
+        engine_running_time: List[int] = input_registers[
+            IR_TotalWorkingTime_HRS_MIN : IR_TotalWorkingTime_DAYS + 1
+        ]
+        supply_airflow: int = input_registers[IR_CurSuAirFLOW]
+        extract_airflow: int = input_registers[IR_CurExAirFLOW]
+        supply_fan_speed: int = input_registers[IR_CurSuFanSPEED]
+        extract_fan_speed: int = input_registers[IR_CurExFanSPEED]
+        # EO birdie1 additions
+
         self.device = ClimateDevice(
             available=True,
             name="Blauberg S21",
@@ -176,8 +196,8 @@ class S21Client:
             max_fan_level=max_fan_level,
             filter_state=filter_state,
             alarm_state=alarm_state,
-            supply_fan_speed=supply_fan_speed,
-            extract_fan_speed=extract_fan_speed,
+            supply_fan_rpm=supply_fan_rpm,
+            extract_fan_rpm=extract_fan_rpm,
 
             # MaNi additions
             alarm_codes=alarm_codes,
@@ -199,6 +219,14 @@ class S21Client:
             supply_pressure=supply_pressure,
             extract_pressure=extract_pressure,
             # EO MaNi additions
+
+            # birdie1 additions
+            engine_running_time=_parse_min_hours_days_to_min(engine_running_time),
+            supply_airflow=supply_airflow,
+            extract_airflow=extract_airflow,
+            supply_fan_speed=supply_fan_speed,
+            extract_fan_speed=extract_fan_speed,
+            # EO birdie1 additions
         )
         
         # MaNi additions

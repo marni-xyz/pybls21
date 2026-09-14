@@ -69,8 +69,16 @@ class ClimateDevice:
     max_fan_level:              int
     filter_state:               int
     alarm_state:                int
-    supply_fan_speed:           int
-    extract_fan_speed:          int
+    supply_fan_rpm:             int
+    extract_fan_rpm:            int
+
+    # birdie1 additions
+    engine_running_time: int
+    supply_airflow:      int
+    extract_airflow:     int
+    supply_fan_speed:    int
+    extract_fan_speed:   int
+    # EO birdie1 additions
 
     # MaNi additions
     current_supply_temperature:  float

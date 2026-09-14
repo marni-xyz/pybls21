@@ -134,8 +134,8 @@ class TestClient(unittest.IsolatedAsyncioTestCase):
         self.server.data_bank.set_holding_registers(HR_OPERATION_MODE, [0])
         self.server.data_bank.set_holding_registers(HR_ManualSPEED, [100])
         self.server.data_bank.set_input_registers(IR_CurRH_Int, [0])
-        self.server.data_bank.set_input_registers(IR_SuRPM, [10])
-        self.server.data_bank.set_input_registers(IR_ExRPM, [20])
+        self.server.data_bank.set_input_registers(IR_SuRPM, [1100])
+        self.server.data_bank.set_input_registers(IR_ExRPM, [2200])
         self.server.data_bank.set_input_registers(IR_StateFILTER, [3])
         self.server.data_bank.set_input_registers(IR_ALARM, [2])
         self.server.data_bank.set_input_registers(IR_CurTEMP_SuAirIn, [108])
@@ -158,6 +158,15 @@ class TestClient(unittest.IsolatedAsyncioTestCase):
         self.server.data_bank.set_holding_registers(HR_BYPASS_ROTOR_SET_MANUAL, [42])
         self.server.data_bank.set_input_registers(IR_BYPASS_ROTOR_STATUS, [4])
         # EO MaNi additions
+
+        # birdie1 additions
+        self.server.data_bank.set_input_registers(IR_TotalWorkingTime_HRS_MIN, [3 << 8 | 33])
+        self.server.data_bank.set_input_registers(IR_TotalWorkingTime_DAYS, [2])
+        self.server.data_bank.set_input_registers(IR_CurSuAirFLOW, [55])
+        self.server.data_bank.set_input_registers(IR_CurExAirFLOW, [66])
+        self.server.data_bank.set_input_registers(IR_CurSuFanSPEED, [30])
+        self.server.data_bank.set_input_registers(IR_CurExFanSPEED, [35])
+        # EO birdie1 additions
 
         self.server.data_bank.set_input_registers(
             IR_VerMAIN_FMW_start, [36, 2053, 2019]
@@ -202,8 +211,8 @@ class TestClient(unittest.IsolatedAsyncioTestCase):
                 max_fan_level=4,
                 filter_state=3,
                 alarm_state=2,
-                supply_fan_speed=10,
-                extract_fan_speed=20,
+                supply_fan_rpm=1100,
+                extract_fan_rpm=2200,
 
                 # MaNi additions
                 current_supply_temperature=12.3,
@@ -224,6 +233,14 @@ class TestClient(unittest.IsolatedAsyncioTestCase):
                 bypass_position=4,
                 bypass_position_manual=42,
                 # EO MaNi additions
+
+                # birdie1 additions
+                engine_running_time=3093,
+                supply_airflow=55,
+                extract_airflow=66,
+                supply_fan_speed=30,
+                extract_fan_speed=35,
+                # EO birdie1 additions
             ),
         )
 
