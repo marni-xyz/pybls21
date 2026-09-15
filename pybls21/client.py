@@ -15,6 +15,8 @@ from .exceptions import (
 )
 from .models import (
     TEMP_CELSIUS,
+    BypassMode,
+    BypassType,
     ClimateDevice,
     ClimateEntityFeature,
     HVACAction,
@@ -39,6 +41,16 @@ def _to_signed_16bit(value: int) -> int:
     return value - 0x10000 if value > 0x7FFF else value
 
 
+# birdie1 additions
+def _parse_min_hours_days_to_min(datetime_info: List[int]) -> int:
+    hours, minutes = datetime_info[0].to_bytes(2, "big")
+    days: int = datetime_info[1]
+    total_minutes = days * 1440 + hours * 60 + minutes
+
+    return total_minutes
+# EO birdie1 additions
+
+
 class S21Client:
     def __init__(self, host: str, port: int = 502):
         self.host = host
@@ -61,8 +73,8 @@ class S21Client:
             raise UnsupportedDeviceException("Unsupported device (IR_DeviceTYPE != 1)")
 
         coils = await self._read_coils(0, count=4)
-        holding_registers = await self._read_holding_registers(0, count=75)
-        input_registers = await self._read_input_registers(0, count=39)
+        holding_registers = await self._read_holding_registers(0, count=76)
+        input_registers = await self._read_input_registers(0, count=54)
 
         is_on: bool = coils[CL_POWER]
         is_boosting: bool = coils[CL_Boost_MODE]
@@ -79,14 +91,14 @@ class S21Client:
 
         max_fan_level: int = holding_registers[HR_MaxSPEED_MODE]
         current_fan_level: int = holding_registers[HR_SPEED_MODE]  # 255 - manual
-        temp_before_heating_x10: int = _to_signed_16bit(
+        temp_air_before_heating_x10: int = _to_signed_16bit(
             input_registers[IR_CurTEMP_SuAirIn]
         )
-        temp_after_heating_x10: int = _to_signed_16bit(
+        temp_air_after_heating_x10: int = _to_signed_16bit(
             input_registers[IR_CurTEMP_SuAirOut]
         )
-        supply_fan_speed: int = input_registers[IR_SuRPM]
-        extract_fan_speed: int = input_registers[IR_ExRPM]
+        supply_fan_rpm: int = input_registers[IR_SuRPM]
+        extract_fan_rpm: int = input_registers[IR_ExRPM]
         firmware_info: List[int] = input_registers[
             IR_VerMAIN_FMW_start : IR_VerMAIN_FMW_end + 1
         ]
@@ -95,34 +107,48 @@ class S21Client:
 
         # MaNi additions
         is_timer: bool = coils[CL_TIMER]
-        main_timer_sec: int = input_registers[IR_CurTIMER_TIME] & 0xFF   # Low Byte is seconds
+        main_timer_sec: int = input_registers[IR_CurTIMER_TIME] & 0xFF           # Low Byte is seconds
         main_timer_min: int = ( input_registers[IR_CurTIMER_TIME] >> 8 ) & 0xFF  # High Byte is minutes
-        main_timer_hrs: int = input_registers[IR_CurTIMER_TIME_HRS] & 0xFF   # Low Byte (padding-safe)
+        main_timer_hrs: int = input_registers[IR_CurTIMER_TIME_HRS] & 0xFF       # Low Byte (padding-safe)
         
         is_schedule: bool = coils[CL_WEEK]
         current_schedule_mode_speed: int = input_registers[IR_CurWeekSpeed]  # 0 - manual
         
-        bypass_type: int = holding_registers[HR_BYPASS_ROTOR_TYPE]
-        bypass_mode: int = holding_registers[HR_BYPASS_ROTOR_MODE]
-        
-        temp_used_air_incoming_x10: int = _to_signed_16bit(
+        bypass_type: BypassType = BypassType(holding_registers[HR_BYPASS_ROTOR_TYPE])
+        bypass_mode: BypassMode = BypassMode(holding_registers[HR_BYPASS_ROTOR_MODE])
+        bypass_position_manual: int = holding_registers[HR_BYPASS_ROTOR_SET_MANUAL]
+        bypass_position: int = input_registers[IR_BYPASS_ROTOR_STATUS]
+
+        temp_air_extract_x10: int = _to_signed_16bit(
             input_registers[IR_CurTEMP_ExAirIn]
         )
-        temp_used_air_outgoing_x10: int = _to_signed_16bit(
+        temp_air_exhaust_x10: int = _to_signed_16bit(
             input_registers[IR_CurTEMP_ExAirOut]
         )
-        filter_countdown: int = input_registers[IR_CurFILTER_TIMER]
-        pressure_air_incoming: int = input_registers[IR_CurSuPRESS]
-        pressure_air_outgoing: int = input_registers[IR_CurExPRESS]
+        filter_countdown_days: int = input_registers[IR_CurFILTER_TIMER_DAYS]
+        filter_countdown_hrs: int = ( input_registers[IR_CurFILTER_TIMER_HRS_MIN] >> 8 ) & 0xFF  # High Byte is hours
+        filter_countdown_min: int = input_registers[IR_CurFILTER_TIMER_HRS_MIN] & 0xFF           # Low Byte (padding-safe) is minutes
+        supply_pressure: int = input_registers[IR_CurSuPRESS]
+        extract_pressure: int = input_registers[IR_CurExPRESS]
         # EO MaNi additions
         
+        # birdie1 additions
+        engine_running_time: List[int] = input_registers[
+            IR_TotalWorkingTime_HRS_MIN : IR_TotalWorkingTime_DAYS + 1
+        ]
+        supply_airflow: int = input_registers[IR_CurSuAirFLOW]
+        extract_airflow: int = input_registers[IR_CurExAirFLOW]
+        supply_fan_speed: int = input_registers[IR_CurSuFanSPEED]
+        extract_fan_speed: int = input_registers[IR_CurExFanSPEED]
+        # EO birdie1 additions
+
         self.device = ClimateDevice(
             available=True,
             name="Blauberg S21",
             unique_id=f"S21_{self.host}_{self.port}",
             temperature_unit=TEMP_CELSIUS,  # Seems like no Fahrenheit option is available
             precision=1,
-            current_temperature=temp_after_heating_x10 / 10,
+            current_temperature=temp_air_after_heating_x10 / 10,
             target_temperature=set_temperature,
             target_temperature_step=1,
             min_temp=15,
@@ -139,8 +165,8 @@ class S21Client:
                 else HVACAction.FAN if operation_mode == 0
                 else HVACAction.HEATING if operation_mode == 1
                 else HVACAction.COOLING if operation_mode == 2
-                else HVACAction.HEATING if temp_before_heating_x10 < temp_after_heating_x10
-                else HVACAction.COOLING if temp_before_heating_x10 > temp_after_heating_x10
+                else HVACAction.HEATING if temp_air_before_heating_x10 < temp_air_after_heating_x10
+                else HVACAction.COOLING if temp_air_before_heating_x10 > temp_air_after_heating_x10
                 else HVACAction.IDLE,
             hvac_modes=[
                 HVACMode.OFF,
@@ -165,20 +191,22 @@ class S21Client:
             model="S21",
             sw_version=_parse_firmware_version(firmware_info),
             is_boosting=is_boosting,
-            current_intake_temperature=temp_before_heating_x10 / 10,
+            current_intake_temperature=temp_air_before_heating_x10 / 10,
             manual_fan_speed_percent=manual_fan_speed_percent,
             max_fan_level=max_fan_level,
             filter_state=filter_state,
             alarm_state=alarm_state,
-            supply_fan_speed=supply_fan_speed,
-            extract_fan_speed=extract_fan_speed,
+            supply_fan_rpm=supply_fan_rpm,
+            extract_fan_rpm=extract_fan_rpm,
 
             # MaNi additions
             alarm_codes=alarm_codes,
-            current_intake_temperature_out=temp_after_heating_x10 / 10,  # fresh air ventilation -> rooms
-            current_outlet_temperature_in=temp_used_air_incoming_x10 / 10,   # used air rooms -> ventilation
-            current_outlet_temperature_out=temp_used_air_outgoing_x10 / 10,  # used air ventilation -> outside 
-            filter_countdown=filter_countdown,  # whole days until filter replacement
+            current_supply_temperature=temp_air_after_heating_x10 / 10,  # fresh air from ventilation unit into rooms
+            current_extract_temperature=temp_air_extract_x10 / 10,       # used air from rooms into ventilation unit
+            current_exhaust_temperature=temp_air_exhaust_x10 / 10,       # used air from ventilation unit to outside 
+            filter_countdown_days=filter_countdown_days,  # whole days until filter replacement
+            filter_countdown_hrs=filter_countdown_hrs,    # whole hours until filter replacement
+            filter_countdown_min=filter_countdown_min,    # whole minutes until filter replacement
             is_timer=is_timer,
             timer_countdown = f"{main_timer_hrs:02d}:{main_timer_min:02d}:{main_timer_sec:02d}",
             is_schedule_mode=is_schedule,
@@ -186,9 +214,19 @@ class S21Client:
             fan_level_manual_mode=current_fan_level,
             bypass_type=bypass_type,
             bypass_mode=bypass_mode,
-            pressure_air_incoming=pressure_air_incoming,
-            pressure_air_outgoing=pressure_air_outgoing,
+            bypass_position=bypass_position,
+            bypass_position_manual=bypass_position_manual,
+            supply_pressure=supply_pressure,
+            extract_pressure=extract_pressure,
             # EO MaNi additions
+
+            # birdie1 additions
+            engine_running_time=_parse_min_hours_days_to_min(engine_running_time),
+            supply_airflow=supply_airflow,
+            extract_airflow=extract_airflow,
+            supply_fan_speed=supply_fan_speed,
+            extract_fan_speed=extract_fan_speed,
+            # EO birdie1 additions
         )
         
         # MaNi additions
@@ -327,17 +365,32 @@ class S21Client:
     async def _set_scheduler_mode_off(self) -> None:
         await self._write_coil(CL_WEEK, False)
 
-    async def set_bypass_mode(self, mode: int) -> None:
+    async def set_bypass_mode(self, mode: BypassMode) -> None:
         self._validate_bypass_mode(mode)
+        mode = BypassMode(mode)
         await self._do_with_connection(lambda: self._set_bypass_mode(mode))
 
     async def _set_bypass_mode(self, mode: int) -> None:
         await self._write_register(HR_BYPASS_ROTOR_MODE, mode)
 
     @staticmethod
-    def _validate_bypass_mode(mode: int) -> None:
-        if not isinstance(mode, int) or mode not in (0, 1, 2):
-            raise ValueError(f"Bypass mode must be 0 (close/start), 1 (open/stop), or 2 (auto); got: {mode}")
+    def _validate_bypass_mode(mode: BypassMode) -> None:
+        if mode not in BypassMode:
+            raise ValueError(f"Bypass mode must be 0 (closed/start), 1 (open/stop), or 2 (auto); got: {mode}")
+
+    async def set_bypass_position(self, position_percent: int) -> None:
+        self._validate_bypass_position(position_percent)
+        await self._do_with_connection(
+            lambda: self._set_bypass_position(position_percent)
+        )
+
+    async def _set_bypass_position(self, position_percent: int) -> None:
+        await self._write_register(HR_BYPASS_ROTOR_SET_MANUAL, position_percent)
+    
+    @staticmethod
+    def _validate_bypass_position(position_percent: int) -> None:
+        if not isinstance(position_percent, int) or not 0 <= position_percent <= 100:
+            raise ValueError("Bypass position percent must be between 0 and 100")
 
     async def _read_alarm_codes(self) -> list[int]:
         """Read active alarm codes from Discrete Inputs 19-71."""

@@ -6,8 +6,14 @@ from pyModbusTCP.server import DataBank, ModbusServer
 from pybls21.client import S21Client
 from pybls21.constants import *
 from pybls21.exceptions import *
-from pybls21.models import ClimateDevice, ClimateEntityFeature, HVACAction, HVACMode
-
+from pybls21.models import (
+    BypassMode,
+    BypassType,
+    ClimateDevice,
+    ClimateEntityFeature,
+    HVACAction,
+    HVACMode,
+)
 
 class ErrorResponse:
     def isError(self):
@@ -91,6 +97,25 @@ class TestClient(unittest.IsolatedAsyncioTestCase):
         with self.assertRaises(ModbusCommunicationException):
             await client.poll()
 
+    async def test_poll_when_it_fails_after_a_successful_poll_marks_device_unavailable(
+        self,
+    ):
+        client = S21Client(host=self.server.host, port=self.server.port)
+
+        # A device has to be present first - the failure path below is only
+        # reached once self.device holds a ClimateDevice.
+        await client.poll()
+        self.assertTrue(client.device.available)
+
+        client.client.connect = AsyncMock(return_value=True)
+        client.client.close = Mock()
+        client.client.read_input_registers = AsyncMock(return_value=ErrorResponse())
+
+        with self.assertRaises(ModbusCommunicationException):
+            await client.poll()
+
+        self.assertFalse(client.device.available)
+
     async def test_turn_on_when_write_fails_raises_exception(self):
         client = S21Client(host=self.server.host, port=self.server.port)
         client.client.connect = AsyncMock(return_value=True)
@@ -109,19 +134,20 @@ class TestClient(unittest.IsolatedAsyncioTestCase):
         self.server.data_bank.set_holding_registers(HR_OPERATION_MODE, [0])
         self.server.data_bank.set_holding_registers(HR_ManualSPEED, [100])
         self.server.data_bank.set_input_registers(IR_CurRH_Int, [0])
-        self.server.data_bank.set_input_registers(IR_SuRPM, [10])
-        self.server.data_bank.set_input_registers(IR_ExRPM, [20])
+        self.server.data_bank.set_input_registers(IR_SuRPM, [1100])
+        self.server.data_bank.set_input_registers(IR_ExRPM, [2200])
         self.server.data_bank.set_input_registers(IR_StateFILTER, [3])
         self.server.data_bank.set_input_registers(IR_ALARM, [2])
         self.server.data_bank.set_input_registers(IR_CurTEMP_SuAirIn, [108])
         self.server.data_bank.set_input_registers(IR_CurTEMP_SuAirOut, [123])
 
         # MaNi additions
-        self.server.data_bank.set_input_registers(IR_CurTEMP_ExAirIn, [135])
-        self.server.data_bank.set_input_registers(IR_CurTEMP_ExAirOut, [109])
-        self.server.data_bank.set_input_registers(IR_CurFILTER_TIMER, [42])
-        self.server.data_bank.set_input_registers(IR_CurSuPRESS, [333])
-        self.server.data_bank.set_input_registers(IR_CurExPRESS, [444])
+        self.server.data_bank.set_input_registers(IR_CurTEMP_ExAirIn, [236])
+        self.server.data_bank.set_input_registers(IR_CurTEMP_ExAirOut, [227])
+        self.server.data_bank.set_input_registers(IR_CurFILTER_TIMER_DAYS, [69])
+        self.server.data_bank.set_input_registers(IR_CurFILTER_TIMER_HRS_MIN, [11 << 8 | 22])
+        self.server.data_bank.set_input_registers(IR_CurSuPRESS, [45])
+        self.server.data_bank.set_input_registers(IR_CurExPRESS, [50])
         self.server.data_bank.set_coils(CL_TIMER, [False])
         self.server.data_bank.set_input_registers(IR_CurTIMER_TIME, [27 << 8])
         self.server.data_bank.set_input_registers(IR_CurTIMER_TIME_HRS, [2])
@@ -129,7 +155,18 @@ class TestClient(unittest.IsolatedAsyncioTestCase):
         self.server.data_bank.set_input_registers(IR_CurWeekSpeed, [1])
         self.server.data_bank.set_holding_registers(HR_BYPASS_ROTOR_TYPE, [5])
         self.server.data_bank.set_holding_registers(HR_BYPASS_ROTOR_MODE, [2])
+        self.server.data_bank.set_holding_registers(HR_BYPASS_ROTOR_SET_MANUAL, [42])
+        self.server.data_bank.set_input_registers(IR_BYPASS_ROTOR_STATUS, [4])
         # EO MaNi additions
+
+        # birdie1 additions
+        self.server.data_bank.set_input_registers(IR_TotalWorkingTime_HRS_MIN, [3 << 8 | 33])
+        self.server.data_bank.set_input_registers(IR_TotalWorkingTime_DAYS, [2])
+        self.server.data_bank.set_input_registers(IR_CurSuAirFLOW, [55])
+        self.server.data_bank.set_input_registers(IR_CurExAirFLOW, [66])
+        self.server.data_bank.set_input_registers(IR_CurSuFanSPEED, [30])
+        self.server.data_bank.set_input_registers(IR_CurExFanSPEED, [35])
+        # EO birdie1 additions
 
         self.server.data_bank.set_input_registers(
             IR_VerMAIN_FMW_start, [36, 2053, 2019]
@@ -174,24 +211,36 @@ class TestClient(unittest.IsolatedAsyncioTestCase):
                 max_fan_level=4,
                 filter_state=3,
                 alarm_state=2,
-                supply_fan_speed=10,
-                extract_fan_speed=20,
+                supply_fan_rpm=1100,
+                extract_fan_rpm=2200,
 
                 # MaNi additions
-                current_intake_temperature_out=12.3,
-                current_outlet_temperature_in=13.5,
-                current_outlet_temperature_out=10.9,
-                filter_countdown=42,
+                current_supply_temperature=12.3,
+                current_extract_temperature=23.6,
+                current_exhaust_temperature=22.7,
+                filter_countdown_days=69,
+                filter_countdown_hrs=11,
+                filter_countdown_min=22,
                 is_timer=False,
                 timer_countdown = "02:27:00",
-                pressure_air_incoming=333,
-                pressure_air_outgoing=444,
+                supply_pressure=45,
+                extract_pressure=50,
                 is_schedule_mode=True,
                 fan_level_schedule_mode=1,
                 fan_level_manual_mode=2,
-                bypass_type=5,
-                bypass_mode=2,
+                bypass_type=BypassType.BYPASS_THREE_POINT,
+                bypass_mode=BypassMode.AUTO,
+                bypass_position=4,
+                bypass_position_manual=42,
                 # EO MaNi additions
+
+                # birdie1 additions
+                engine_running_time=3093,
+                supply_airflow=55,
+                extract_airflow=66,
+                supply_fan_speed=30,
+                extract_fan_speed=35,
+                # EO birdie1 additions
             ),
         )
 
@@ -561,6 +610,20 @@ class TestClient(unittest.IsolatedAsyncioTestCase):
 
 
     # --- Bypass tests ---
+    
+    async def test_poll_bypass_read_states(self):
+        self.server.data_bank.set_holding_registers(HR_BYPASS_ROTOR_TYPE, [2])
+        self.server.data_bank.set_holding_registers(HR_BYPASS_ROTOR_MODE, [2])
+        self.server.data_bank.set_holding_registers(HR_BYPASS_ROTOR_SET_MANUAL, [75])
+        self.server.data_bank.set_input_registers(IR_BYPASS_ROTOR_STATUS, [42])
+
+        client = S21Client(host=self.server.host, port=self.server.port)
+        device = await client.poll()
+
+        self.assertEqual(device.bypass_type, BypassType.BYPASS_ANALOGUE)
+        self.assertEqual(device.bypass_mode, BypassMode.AUTO)
+        self.assertEqual(device.bypass_position_manual, 75)
+        self.assertEqual(device.bypass_position, 42)
 
     async def test_set_bypass_mode_close(self):
         self.server.data_bank.set_holding_registers(HR_BYPASS_ROTOR_MODE, [1])
@@ -596,11 +659,31 @@ class TestClient(unittest.IsolatedAsyncioTestCase):
         client = S21Client(host=self.server.host, port=self.server.port)
         client.client.connect = AsyncMock(return_value=True)
 
-        for invalid_mode in (3, -1, 255):
+        for invalid_mode in (-1, 3):
             with self.subTest(mode=invalid_mode):
-                with self.assertRaises(ValueError) as ctx:
+                with self.assertRaises(ValueError):
                     await client.set_bypass_mode(invalid_mode)
-            print(f"[mode={invalid_mode}] ValueError: {ctx.exception}")
+
+        client.client.connect.assert_not_called()
+
+    async def test_set_bypass_position(self):
+        self.server.data_bank.set_holding_registers(HR_BYPASS_ROTOR_SET_MANUAL, [0])
+
+        client = S21Client(host=self.server.host, port=self.server.port)
+        await client.set_bypass_position(60)
+
+        self.assertEqual(
+            self.server.data_bank.get_holding_registers(HR_BYPASS_ROTOR_SET_MANUAL, 1), [60]
+        )
+
+    async def test_set_bypass_position_when_value_is_invalid_raises_exception(self):
+        client = S21Client(host=self.server.host, port=self.server.port)
+        client.client.connect = AsyncMock(return_value=True)
+
+        for invalid_position in (-1, 101):
+            with self.subTest(position=invalid_position):
+                with self.assertRaises(ValueError):
+                    await client.set_bypass_position(invalid_position)
 
         client.client.connect.assert_not_called()
 
@@ -657,7 +740,7 @@ class TestDataBank(DataBank):
 
     def __init__(self):
         super().__init__(
-            coils_size=25, d_inputs_size=72, h_regs_size=182, i_regs_size=51
+            coils_size=25, d_inputs_size=72, h_regs_size=182, i_regs_size=54
         )
         self.reset()
 

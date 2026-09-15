@@ -29,6 +29,20 @@ class HVACAction(str, Enum):
     OFF =       "off"
 
 
+class BypassType(int, Enum):
+    NOT_AVAILABLE      = 0
+    BYPASS_TWO_POINT   = 1  # Discrete open/closed bypass damper control
+    BYPASS_ANALOGUE    = 2  # Bypass damper position controlled 0-100%
+    ROTOR_DISCRETE     = 3  # Discrete on/off rotary heat exchanger control
+    ROTOR_ANALOGUE     = 4  # Rotary heat exchanger speed controlled 0-100%
+    BYPASS_THREE_POINT = 5  # Bypass damper driven open/closed via timed pulses
+
+class BypassMode(int, Enum):
+    CLOSED = 0  # Close the bypass / start the rotor
+    OPEN   = 1  # Open the bypass / stop the rotor (discrete), or manual % (analogue)
+    AUTO   = 2  # Device controls bypass/rotor automatically based on temperature
+
+
 # MaNi - conversion to dataclass
 #class ClimateDevice(NamedTuple):
 @dataclass
@@ -55,16 +69,28 @@ class ClimateDevice:
     max_fan_level:              int
     filter_state:               int
     alarm_state:                int
-    supply_fan_speed:           int
-    extract_fan_speed:          int
+    supply_fan_rpm:             int
+    extract_fan_rpm:            int
+
+    # birdie1 additions
+    engine_running_time: int
+    supply_airflow:      int
+    extract_airflow:     int
+    supply_fan_speed:    int
+    extract_fan_speed:   int
+    # EO birdie1 additions
 
     # MaNi additions
-    current_intake_temperature_out: float
-    current_outlet_temperature_in:  float
-    current_outlet_temperature_out: float
-    is_timer:                       bool
-    is_schedule_mode:               bool
-    alarm_codes:                    list[int] = field(default_factory=list)
+    current_supply_temperature:  float
+    current_extract_temperature: float
+    current_exhaust_temperature: float
+    is_timer:                    bool
+    is_schedule_mode:            bool
+    bypass_position:             int
+    bypass_position_manual:      int
+    bypass_type:                 BypassType
+    bypass_mode:                 BypassMode
+    alarm_codes:                 list[int] = field(default_factory=list)
     # EO MaNi additions
 
     current_humidity: Optional[float] = None
@@ -74,12 +100,12 @@ class ClimateDevice:
     sw_version:       Optional[str] = None
 
     # MaNi additions
-    filter_countdown:        Optional[int] = None
+    filter_countdown_days:   Optional[int] = None
+    filter_countdown_hrs:    Optional[int] = None
+    filter_countdown_min:    Optional[int] = None
     timer_countdown:         Optional[str] = None
-    pressure_air_incoming:   Optional[int] = None
-    pressure_air_outgoing:   Optional[int] = None
+    supply_pressure:         Optional[int] = None
+    extract_pressure:        Optional[int] = None
     fan_level_schedule_mode: Optional[int] = None
     fan_level_manual_mode:   Optional[int] = None
-    bypass_type:             Optional[int] = None
-    bypass_mode:             Optional[int] = None
     # EO MaNi additions
