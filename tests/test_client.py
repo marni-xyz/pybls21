@@ -252,6 +252,7 @@ class TestClient(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(device.hvac_mode, HVACMode.OFF)
         self.assertEqual(device.hvac_action, HVACAction.OFF)
+        self.assertEqual(device.fan_mode, 0)
 
     async def test_poll_when_humidity_is_available(self):
         self.server.data_bank.set_input_registers(IR_CurRH_Int, [42])

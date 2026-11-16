@@ -1,11 +1,6 @@
 import asyncio
 from typing import Any, Awaitable, Callable, List, Optional
 
-# MaNi additions
-import logging
-_LOGGER = logging.getLogger(__name__)
-# EO MaNi additions
-
 from pymodbus.client import AsyncModbusTcpClient
 
 from .constants import *
@@ -65,10 +60,6 @@ class S21Client:
         return await self._do_with_connection(self._poll)
 
     async def _poll(self) -> ClimateDevice:
-        # MaNi additions
-        _LOGGER.debug("Polling device at %s:%s", self.host, self.port)
-        # EO MaNi additions
-        
         if (await self._read_input_registers(IR_DeviceTYPE, count=1))[0] != 1:
             raise UnsupportedDeviceException("Unsupported device (IR_DeviceTYPE != 1)")
 
@@ -176,15 +167,18 @@ class S21Client:
                 HVACMode.FAN_ONLY,
             ],
             
-            # MaNi additions - fan level based on scheduled (prioritised) or manual mode
-            ##fan_mode=current_fan_level,  # original considers manual level only and ignores override in boost or scheduled mode
+            # MaNi additions - fan level based on on/off-state, boost, scheduled (prioritised) or manual mode
+            # original considers manual level only and ignores override in boost or scheduled mode
+            #fan_mode=current_fan_level,
+            #fan_modes=[x + 1 for x in range(max_fan_level)] + [255],
             fan_mode=
-                max_fan_level if is_boosting
+                0 if not is_on
+                else max_fan_level if is_boosting
                 else max_fan_level if is_timer
                 else current_schedule_mode_speed if is_schedule 
                 else current_fan_level,
+            fan_modes=[0] + [x + 1 for x in range(max_fan_level)] + [255],
             # EO MaNi additions
-            fan_modes=[x + 1 for x in range(max_fan_level)] + [255],
             supported_features=ClimateEntityFeature.TARGET_TEMPERATURE
             | ClimateEntityFeature.FAN_MODE,
             manufacturer="Blauberg",
@@ -228,11 +222,6 @@ class S21Client:
             extract_fan_speed=extract_fan_speed,
             # EO birdie1 additions
         )
-        
-        # MaNi additions
-        _LOGGER.debug("Poll successful: mode=%s, fan=%s, temp=%s, alarm=%s",
-                  self.device.hvac_mode, self.device.fan_mode, self.device.current_temperature, self.device.alarm_state)
-        # EO MaNi additions
         
         return self.device
 
@@ -405,16 +394,20 @@ class S21Client:
         async with self.lock:  # Device does not support multiple connections
             if not await self.client.connect():
                 # MaNi additions
-                _LOGGER.error("Failed to open Modbus TCP connection to %s:%s", self.host, self.port)
+                #raise ModbusCommunicationException("Failed to open Modbus TCP connection")
+                raise ModbusCommunicationException(
+                    f"Failed to open Modbus TCP connection to: {self.host} - {self.port} "
+                )
                 # EO MaNi additions
-                raise ModbusCommunicationException("Failed to open Modbus TCP connection")
 
             try:
                 return await func()
             # MaNi additions
             #except Exception:
             except Exception as exc:
-                _LOGGER.warning("Modbus operation failed for %s:%s: %s", self.host, self.port, exc)
+                raise ModbusCommunicationException(
+                    f"Modbus operation failed for: {self.host} - {self.port} wtih error: {exc} "
+                )
                 # EO MaNi additions
                 if isinstance(self.device, ClimateDevice):
                     self.device.available = False

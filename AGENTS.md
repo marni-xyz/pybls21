@@ -17,18 +17,18 @@ Core capabilities in this project:
 - Reset filter timer
 
 ## Repository Map
-
-- `pybls21/pybls21/client.py`: Main async client implementation (`S21Client`).
-- `pybls21/pybls21/constants.py`: Modbus register/coil constants.
-- `pybls21/pybls21/models.py`: Data models and HVAC enums.
-- `pybls21/pybls21/exceptions.py`: Custom exceptions.
-- `pybls21/tests/test_client.py`: Async unit tests with a local Modbus test server.
-- `pybls21/demo.py`: Usage example.
-- `pybls21/setup.py`: Packaging metadata.
+- `pyproject.toml`: Packaging metadata and tool configuration.
+- `pybls21/client.py`: Main async client implementation (`S21Client`).
+- `pybls21/constants.py`: Modbus register/coil constants.
+- `pybls21/models.py`: Data models and HVAC enums.
+- `pybls21/exceptions.py`: Custom exceptions.
+- `tests/test_client.py`: Async unit tests with a local Modbus test server.
+- `demo.py`: Usage example.
+- `setup.py`: Packaging metadata.
 
 ## Development Setup
 
-Use Python 3.10+.
+Use Python 3.14.2+, matching the Home Assistant 2026.9 baseline.
 
 ```bash
 python3 -m venv .venv
@@ -54,8 +54,8 @@ python -m unittest -v tests.test_client
 ## Editing Rules
 
 - Keep all public client methods async.
-- Preserve compatibility with `pymodbus>=3.11.2,<4.0`.
-- When changing Modbus mappings, update tests in `pybls21/tests/test_client.py` in the same change.
+- Preserve compatibility with `pymodbus>=3.13.1,<4.0`.
+- When changing Modbus mappings, update tests in `tests/test_client.py` in the same change.
 - Keep API behavior stable unless explicitly requested; this package may be used by Home Assistant integrations.
 
 ## Verification Checklist
